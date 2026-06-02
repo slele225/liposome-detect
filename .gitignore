@@ -1,0 +1,21 @@
+# Raw data (large, not version controlled)
+data/
+
+# Generated artifacts (large) — keep the dirs via .gitkeep, ignore contents
+datasets/*
+!datasets/.gitkeep
+calibrations/*
+!calibrations/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# Environments
+.venv/
+
+# Model checkpoints
+*.pt
+*.pth

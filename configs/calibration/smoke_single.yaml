@@ -1,0 +1,15 @@
+# Single-sample real smoke calibration against the one dataset shipped in this
+# repo (data/20nM_EGFP). Tiny trial budget — exercises the full real pipeline
+# (load -> measure -> optimize -> validate -> plots) end-to-end. NOT a real
+# calibration result.
+output_dir: calibrations/smoke_single
+n_trials: 5
+n_sim_per_trial: 4
+val_fraction: 0.2
+seed: 0
+
+samples:
+  - name: 20nM_EGFP
+    image_dir: data/20nM_EGFP/images
+    dark_dir: data/20nM_EGFP/dark frames
+    dls_path: data/20nM_EGFP/batch1_dls_corrected.xlsx

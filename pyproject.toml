@@ -1,0 +1,35 @@
+[project]
+name = "liposome-detect"
+version = "0.1.0"
+description = "Physics-calibrated confocal forward simulator + liposome puncta detection (calibration stage)."
+requires-python = ">=3.10"
+# Dependencies for the simulator + calibration stage ported here. Training /
+# detector dependencies from the archive (torch, h5py) are intentionally
+# omitted until that code is ported in a later stage.
+dependencies = [
+    "numpy",
+    "scipy",
+    "tifffile",
+    "imagecodecs",
+    "openpyxl",
+    "optuna",
+    "matplotlib",
+    "pyyaml",
+    "tqdm",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+]
+
+# No [build-system]: this project is run from the repo root (scripts + the
+# `src` package on the path), not installed as a wheel. `uv sync` therefore
+# manages the environment without building the project itself.
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+# Put the repo root on sys.path so tests can `import src.*`.
+pythonpath = ["."]
+testpaths = ["tests"]

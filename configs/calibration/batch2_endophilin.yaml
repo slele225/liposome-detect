@@ -1,0 +1,10 @@
+# Calibration config: 300 nM endophilin on ternary 0.5% PEG-B LUVs.
+# Output goes to calibrations/batch2_endophilin/.
+image_dir: data/300nM_endophilin/Images
+dark_dir: data/300nM_endophilin/Dark_frames
+dls_path: data/300nM_endophilin/Ternary 0.5% PEGB.xlsx
+output_dir: calibrations/batch2_endophilin
+image_pattern: '*.tif*'
+dark_pattern: '*.tif*'
+n_trials: 200
+n_sim_per_trial: 30

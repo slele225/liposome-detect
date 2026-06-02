@@ -1,0 +1,55 @@
+# Joint calibration across all 6 biological samples (4 EGFP + 2 endophilin).
+# Output: calibrations/joint_all_samples/calibration_results.json
+#
+# Microscope (shared) parameters fitted jointly across all samples:
+#   gain, enf, psf_sigma_x, psf_sigma_y, bg_amplitude, haze_level, labeling_eff
+# Per-sample free: spot_density, bg_amplitude_protein, autofl_protein,
+#   voltage_scale_protein.
+# Per-sample pinned: dark_results.{offset,read_noise_var}.
+output_dir: calibrations/joint_all_samples
+n_trials: 400
+n_sim_per_trial: 30
+val_fraction: 0.2
+seed: 0
+
+# Optional per-term weighting of the real-vs-sim discrepancy loss. If this
+# block is omitted entirely, the defaults below are used and reproduce the
+# original hardcoded weighting exactly. Each term takes {enabled, weight};
+# an enabled term contributes weight * raw_term, a disabled term is skipped.
+# Uncomment and edit to re-weight or ablate terms.
+#
+# discrepancy:
+#   pixel_hist:        {enabled: true,  weight: 0.01}   # pixel-intensity Wasserstein
+#   spot_intensity:    {enabled: true,  weight: 0.005}  # spot peak-intensity Wasserstein
+#   psd:               {enabled: true,  weight: 1.0}    # log radial PSD MSE
+#   spot_density:      {enabled: true,  weight: 1.0}    # normalized spot-count SE
+#   mean_pixel:        {enabled: true,  weight: 1.0}    # normalized mean-pixel SE
+#   protein_nonpuncta: {enabled: true,  weight: 0.005}  # non-puncta protein Wasserstein
+
+samples:
+  - name: 20nM_EGFP
+    image_dir: data/20nM_EGFP/images
+    dark_dir: data/20nM_EGFP/dark frames
+    dls_path: data/20nM_EGFP/batch1_dls_corrected.xlsx
+  - name: 50nM_EGFP
+    image_dir: data/50nM_EGFP/images
+    dark_dir: data/50nM_EGFP/dark frames
+    dls_path: data/50nM_EGFP/batch1_dls_corrected.xlsx
+  - name: 100nM_EGFP
+    image_dir: data/100nM_EGFP/images
+    dark_dir: data/100nM_EGFP/dark frames
+    dls_path: data/100nM_EGFP/batch1_dls_corrected.xlsx
+  - name: 300nM_EGFP
+    image_dir: data/300nM_EGFP/images
+    dark_dir: data/300nM_EGFP/dark frames
+    dls_path: data/300nM_EGFP/batch1_dls_corrected.xlsx
+  - name: 25nM_endophilin
+    image_dir: data/25nM_endophilin/images
+    dark_dir: data/25nM_endophilin/Dark_frames
+    dls_path: data/25nM_endophilin/Ternary 0.5% PEGB.xlsx
+    n_frames_for_calibration: 20
+  - name: 300nM_endophilin
+    image_dir: data/300nM_endophilin/Images
+    dark_dir: data/300nM_endophilin/Dark_frames
+    dls_path: data/300nM_endophilin/Ternary 0.5% PEGB.xlsx
+    n_frames_for_calibration: 20

@@ -1,0 +1,20 @@
+# Smoke test for joint multi-sample calibration. Uses the two datasets
+# present on disk in this checkout (20nM_EGFP, 300nM_endophilin) and a tiny
+# trial budget so the pipeline can be exercised end-to-end without running a
+# real calibration. NOT a calibration result — only used to verify code paths.
+output_dir: calibrations/joint_smoke
+n_trials: 5
+n_sim_per_trial: 4
+val_fraction: 0.2
+seed: 0
+
+samples:
+  - name: 20nM_EGFP
+    image_dir: data/20nM_EGFP/images
+    dark_dir: data/20nM_EGFP/dark frames
+    dls_path: data/20nM_EGFP/batch1_dls_corrected.xlsx
+  - name: 300nM_endophilin
+    image_dir: data/300nM_endophilin/Images
+    dark_dir: data/300nM_endophilin/Dark_frames
+    dls_path: data/300nM_endophilin/Ternary 0.5% PEGB.xlsx
+    n_frames_for_calibration: 20
