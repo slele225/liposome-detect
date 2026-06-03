@@ -1,19 +1,14 @@
 """Full calibration pipeline orchestration + comparison plots.
 
   - _normalize_samples_config: accept single- or multi-sample configs
-  - save_comparison_plots    : real-vs-sim image and statistic plots
+  - save_comparison_plots    : real-vs-sim lipid image and statistic plots
   - run_full_pipeline        : load -> measure -> optimize -> validate -> save
 
-Ported from the archive's pipeline.py (Modules 10-11). Changes vs archive:
-  * output goes wherever ``config['output_dir']`` points (the ``calibrations/``
-    convention) instead of a hardcoded ``runs/`` path;
-  * a ``discrepancy`` config block is threaded into the optimizer;
-  * ``save_comparison_plots`` is wired into the pipeline so each run emits
-    real-vs-sim plots (the archive defined it but the joint pipeline never
-    called it);
-  * provenance is imported directly from ``src.provenance`` rather than via a
-    sys.path hack.
-All numerical model logic is otherwise unchanged.
+Calibration is lipid-only and detection-free: there is no background-patch
+extraction and no protein-channel scoring. Output goes wherever
+``config['output_dir']`` points (the ``calibrations/`` convention); a
+``discrepancy`` config block is threaded into the optimizer; provenance is
+imported directly from ``src.provenance``.
 """
 
 import json
@@ -26,8 +21,8 @@ from src.calibration.discrepancy import resolve_discrepancy_config
 from src.calibration.optimize import _eval_joint_discrepancy, run_optimization_joint
 from src.calibration.statistics import compute_image_statistics
 from src.provenance import write_provenance
-from src.simulator.estimation import estimate_gain, estimate_psf, extract_backgrounds
-from src.simulator.forward_model import _gather_nonpuncta_protein, simulate_batch_dual_bg
+from src.simulator.estimation import estimate_gain, estimate_psf
+from src.simulator.forward_model import simulate_batch
 from src.simulator.io import analyze_dark_frames, load_all_images, parse_dls
 
 
@@ -35,7 +30,7 @@ def save_comparison_plots(real_images, sim_protein, sim_lipid,
                          real_stats, sim_stats, output_dir, channel='lipid'):
     """
     Generate side-by-side comparison plots of real vs simulated images.
-    Saves as PNG files.
+    Saves as PNG files. ``sim_protein`` may be None for lipid-only runs.
     """
     import matplotlib
     matplotlib.use('Agg')
@@ -69,9 +64,10 @@ def save_comparison_plots(real_images, sim_protein, sim_lipid,
     plt.savefig(os.path.join(output_dir, f'comparison_images_{channel}.png'), dpi=150)
     plt.close()
 
-    # 2. Pixel intensity histograms
+    # 2. Pixel intensity statistics
     fig, axes = plt.subplots(1, 3, figsize=(15, 4))
 
+    # 2a. Pixel intensity distribution (bulk)
     axes[0].plot(real_stats['pixel_hist_bins'][:-1], real_stats['pixel_hist'],
                  label='Real', alpha=0.7)
     axes[0].plot(sim_stats['pixel_hist_bins'][:-1], sim_stats['pixel_hist'],
@@ -82,18 +78,22 @@ def save_comparison_plots(real_images, sim_protein, sim_lipid,
     axes[0].legend()
     axes[0].set_xlim(0, 500)
 
-    # 3. Spot intensity distribution
-    if len(real_stats['spot_intensities']) > 0 and len(sim_stats['spot_intensities']) > 0:
-        axes[1].hist(real_stats['spot_intensities'], bins=50, density=True,
-                     alpha=0.5, label='Real')
-        axes[1].hist(sim_stats['spot_intensities'], bins=50, density=True,
-                     alpha=0.5, label='Simulated')
-        axes[1].set_xlabel('Peak Spot Intensity')
-        axes[1].set_ylabel('Density')
-        axes[1].set_title('Spot Intensity Distribution')
-        axes[1].legend()
+    # 2b. Bright-spot TAIL: same histogram on a log y-axis, with the fitted
+    #     high quantiles marked (detection-free tail diagnostic).
+    axes[1].semilogy(real_stats['pixel_hist_bins'][:-1], real_stats['pixel_hist'] + 1e-12,
+                     label='Real', alpha=0.7)
+    axes[1].semilogy(sim_stats['pixel_hist_bins'][:-1], sim_stats['pixel_hist'] + 1e-12,
+                     label='Simulated', alpha=0.7)
+    for q in ('p99', 'p999'):
+        axes[1].axvline(real_stats[q], color='C0', ls='--', alpha=0.5)
+        axes[1].axvline(sim_stats[q], color='C1', ls=':', alpha=0.5)
+    axes[1].set_xlabel('Pixel Intensity')
+    axes[1].set_ylabel('Density (log)')
+    axes[1].set_title(f"Tail (real p99={real_stats['p99']:.0f}/p99.9={real_stats['p999']:.0f}, "
+                      f"sim p99={sim_stats['p99']:.0f}/p99.9={sim_stats['p999']:.0f})")
+    axes[1].legend()
 
-    # 4. Power spectral density
+    # 2c. Power spectral density
     min_len = min(len(real_stats['radial_psd']), len(sim_stats['radial_psd']))
     axes[2].loglog(real_stats['radial_psd'][:min_len], label='Real', alpha=0.7)
     axes[2].loglog(sim_stats['radial_psd'][:min_len], label='Simulated', alpha=0.7)
@@ -170,6 +170,27 @@ def run_full_pipeline(config):
             if len(images) > n_frames_cap:
                 print(f"  capping frames: {len(images)} -> {n_frames_cap}")
                 images = images[:n_frames_cap]
+
+        # Bootstrap subset (used by the study runner's bootstrap mode): draw a
+        # random subset of `frame_sample_size` frames, with a distinct
+        # `frame_sample_seed` per repeat. Without replacement by default. This
+        # selects the images BEFORE the train/val split below, so each repeat
+        # calibrates an independent image subset. Distinct from the first-N
+        # `n_frames_for_calibration` cap above (they are not used together).
+        fs_size = sc.get('frame_sample_size', None)
+        if fs_size is not None:
+            fs_size = int(fs_size)
+            fs_seed = int(sc.get('frame_sample_seed', split_seed))
+            fs_replace = bool(sc.get('frame_sample_replacement', False))
+            if not fs_replace and fs_size > len(images):
+                raise RuntimeError(
+                    f"Sample '{name}': frame_sample_size={fs_size} exceeds "
+                    f"available frames ({len(images)}) without replacement.")
+            rng_fs = np.random.default_rng(fs_seed)
+            sel = rng_fs.choice(len(images), size=fs_size, replace=fs_replace)
+            print(f"  frame subset: drawing {fs_size} of {len(images)} frames "
+                  f"(seed={fs_seed}, replace={fs_replace})")
+            images = [images[int(i)] for i in sel]
         if len(images) < 2:
             raise RuntimeError(f"Sample '{name}' has too few images "
                                f"({len(images)}) for a train/val split.")
@@ -185,20 +206,12 @@ def run_full_pipeline(config):
 
         dark_res = analyze_dark_frames(sc['dark_dir'],
                                        sc.get('dark_pattern', '*.tif*'))
-        bg_lipid, bg_stats_lipid = extract_backgrounds(train_imgs,
-                                                       channel='lipid')
-        bg_protein, bg_stats_protein = extract_backgrounds(train_imgs,
-                                                           channel='protein')
 
-        rng_stats = np.random.default_rng(split_seed + 1)
+        # Lipid-only, detection-free statistics (no background-patch extraction).
         train_stats = compute_image_statistics(train_imgs, channel='lipid',
                                                is_simulated=False)
-        train_stats['protein_nonpuncta'] = _gather_nonpuncta_protein(
-            train_imgs, rng=rng_stats)
         val_stats = compute_image_statistics(val_imgs, channel='lipid',
                                              is_simulated=False)
-        val_stats['protein_nonpuncta'] = _gather_nonpuncta_protein(
-            val_imgs, rng=rng_stats)
 
         samples.append({
             'name': name,
@@ -208,10 +221,6 @@ def run_full_pipeline(config):
             'dls_probs': dls_p,
             'dls_peak_diameter_nm': peak_d,
             'dark_results': dark_res,
-            'bg_patches_lipid': bg_lipid,
-            'bg_patches_protein': bg_protein,
-            'bg_stats_lipid': bg_stats_lipid,
-            'bg_stats_protein': bg_stats_protein,
             'train_stats': train_stats,
             'val_stats': val_stats,
             'n_frames_used': int(len(images)),
@@ -230,12 +239,17 @@ def run_full_pipeline(config):
         'gain': gain,
     }
 
-    # Joint optimization
+    # Joint optimization. ``output_dir`` lets the optimizer drop trials.csv +
+    # convergence.png next to this calibration's results; ``show_progress_bar``
+    # is suppressed inside parallel studies (set via config) to avoid dozens of
+    # interleaved tqdm bars.
     shared_best, per_sample_best, study, train_loss = run_optimization_joint(
         samples, measured_params,
         n_trials=int(config.get('n_trials', 150)),
         n_sim_per_trial=int(config.get('n_sim_per_trial', 30)),
         discrepancy_config=discrepancy_config,
+        output_dir=output_dir,
+        show_progress_bar=bool(config.get('show_progress_bar', True)),
     )
 
     # Validation discrepancy on held-out 20% (using same params)
@@ -273,11 +287,6 @@ def run_full_pipeline(config):
         },
         'dls_peak_diameter_nm': {s['name']: s['dls_peak_diameter_nm']
                                  for s in samples},
-        'bg_stats': {
-            s['name']: {'lipid': s['bg_stats_lipid'],
-                        'protein': s['bg_stats_protein']}
-            for s in samples
-        },
         'sample_names': [s['name'] for s in samples],
         'per_sample_n_frames_used': {s['name']: int(s['n_frames_used'])
                                      for s in samples},
@@ -289,30 +298,22 @@ def run_full_pipeline(config):
     print(f"\n  Saved calibration results to {results_path}")
 
     # Comparison plots per sample (lipid channel) using the best-fit params.
-    # Uses the existing simulator + plotting code (no new physics); the
-    # archive defined save_comparison_plots but never wired it into the joint
-    # pipeline.
+    # Lipid-only simulation matching the calibration objective.
     n_sim_plot = max(3, int(config.get('n_sim_per_trial', 30)))
     for k, sample in enumerate(samples):
         sp = per_sample_best[sample['name']]
         sim_params = dict(shared_best)
         sim_params['offset_lipid'] = sample['dark_results']['lipid']['offset']
-        sim_params['offset_protein'] = sample['dark_results']['protein']['offset']
         sim_params['read_noise_var_lipid'] = sample['dark_results']['lipid']['read_noise_var']
-        sim_params['read_noise_var_protein'] = sample['dark_results']['protein']['read_noise_var']
         sim_params['spot_density'] = sp['spot_density']
-        sim_params['bg_amplitude_protein'] = sp['bg_amplitude_protein']
-        sim_params['autofl_protein'] = sp['autofl_protein']
-        sim_params.setdefault('curvature_alpha', 1.0)
-        sim_protein, sim_lipid, _ = simulate_batch_dual_bg(
+        _, sim_lipid, _ = simulate_batch(
             sim_params, sample['dls_diameters'], sample['dls_probs'],
-            sample['bg_patches_lipid'], sample['bg_patches_protein'],
-            n_images=n_sim_plot, seed=12345 + k,
+            n_images=n_sim_plot, seed=12345 + k, lipid_only=True,
         )
         sim_stats_lipid = compute_image_statistics(sim_lipid, is_simulated=True)
         plot_dir = os.path.join(output_dir, 'plots', sample['name'])
         try:
-            save_comparison_plots(sample['images'], sim_protein, sim_lipid,
+            save_comparison_plots(sample['images'], None, sim_lipid,
                                   sample['train_stats'], sim_stats_lipid,
                                   plot_dir, channel='lipid')
         except Exception as e:

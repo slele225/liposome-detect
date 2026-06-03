@@ -1,0 +1,27 @@
+# EXP 3 — bootstrap stability study on 25nM_endophilin.
+#
+# Mode: bootstrap. One sample (25nM_endophilin, 55 images). Each of n_repeats
+# repeats draws a RANDOM subset of d images WITHOUT replacement (distinct seed
+# per repeat = base_seed + i), then runs the standard lipid-only, detection-free
+# calibration on that subset (which internally splits the d images into
+# train/val at val_fraction). Default discrepancy weights.
+#
+# This is 100 independent 200-trial calibrations — set n_workers to the VM core
+# count. Run: experiments/2026-06-03_bootstrap-endophilin/run.sh [n_workers]
+mode: bootstrap
+output_dir: experiments/2026-06-03_bootstrap-endophilin
+n_trials: 200
+n_sim_per_trial: 30
+val_fraction: 0.2
+
+sample:
+  name: 25nM_endophilin
+  image_dir: data/25nM_endophilin/images
+  dark_dir: data/25nM_endophilin/dark_frames
+  dls_path: "data/25nM_endophilin/Ternary 0.5% PEGB.xlsx"
+
+bootstrap:
+  d: 25                # images drawn per repeat (of 55 available)
+  n_repeats: 100       # 100 independent calibrations
+  replacement: false   # draw without replacement within each repeat
+  base_seed: 20260603  # repeat i uses seed base_seed + i

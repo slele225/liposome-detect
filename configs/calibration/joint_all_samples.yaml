@@ -1,30 +1,31 @@
 # Joint calibration across all 6 biological samples (4 EGFP + 2 endophilin).
+# Lipid-only, detection-free calibration on the center-256 crop.
 # Output: calibrations/joint_all_samples/calibration_results.json
 #
 # Microscope (shared) parameters fitted jointly across all samples:
-#   gain, enf, psf_sigma_x, psf_sigma_y, bg_amplitude, haze_level, labeling_eff
-# Per-sample free: spot_density, bg_amplitude_protein, autofl_protein,
-#   voltage_scale_protein.
-# Per-sample pinned: dark_results.{offset,read_noise_var}.
+#   lipid_brightness, psf_sigma_x, psf_sigma_y, psf_theta (lipid PSF), gain,
+#   enf, optical_bg_lipid.
+# Per-sample free: spot_density.
+# Per-sample pinned: dark_results.{offset,read_noise_var} (lipid + protein).
 output_dir: calibrations/joint_all_samples
 n_trials: 400
 n_sim_per_trial: 30
 val_fraction: 0.2
 seed: 0
 
-# Optional per-term weighting of the real-vs-sim discrepancy loss. If this
-# block is omitted entirely, the defaults below are used and reproduce the
-# original hardcoded weighting exactly. Each term takes {enabled, weight};
-# an enabled term contributes weight * raw_term, a disabled term is skipped.
-# Uncomment and edit to re-weight or ablate terms.
+# Optional per-term weighting of the real-vs-sim lipid discrepancy loss. If this
+# block is omitted entirely, the defaults below are used. Each term takes
+# {enabled, weight}; an enabled term contributes weight * raw_term, a disabled
+# term is skipped. mean_pixel/quantiles/skewness are all relative squared
+# errors, so weight 1.0 puts them on the same scale. Uncomment to re-weight or
+# ablate terms.
 #
 # discrepancy:
-#   pixel_hist:        {enabled: true,  weight: 0.01}   # pixel-intensity Wasserstein
-#   spot_intensity:    {enabled: true,  weight: 0.005}  # spot peak-intensity Wasserstein
-#   psd:               {enabled: true,  weight: 1.0}    # log radial PSD MSE
-#   spot_density:      {enabled: true,  weight: 1.0}    # normalized spot-count SE
-#   mean_pixel:        {enabled: true,  weight: 1.0}    # normalized mean-pixel SE
-#   protein_nonpuncta: {enabled: true,  weight: 0.005}  # non-puncta protein Wasserstein
+#   pixel_hist: {enabled: true,  weight: 0.01}   # pixel-intensity Wasserstein
+#   psd:        {enabled: true,  weight: 1.0}    # log radial PSD MSE
+#   mean_pixel: {enabled: true,  weight: 1.0}    # relative SE of mean pixel
+#   quantiles:  {enabled: true,  weight: 1.0}    # rel. SE of 99th & 99.9th pctl
+#   skewness:   {enabled: true,  weight: 1.0}    # relative SE of pixel skewness
 
 samples:
   - name: 20nM_EGFP

@@ -1,0 +1,61 @@
+# EXP 1 — discrepancy weight-sweep study on 25nM_endophilin.
+#
+# Mode: weight_sweep. One sample (25nM_endophilin) is calibrated once per named
+# discrepancy-weight config. The baseline "equal" puts ALL FIVE terms at weight
+# 1.0; each "up_*" config raises ONE term to 10.0 and leaves the others at 1.0.
+#
+# IMPORTANT: configs are NOT comparable by loss value (the objective is a
+# different weighting in each). The analysis compares them ONLY by whether the
+# fitted PARAMETERS move across configs. Stable params => weighting doesn't
+# matter for the calibration.
+#
+# Run: experiments/2026-06-03_weight-sweep-endophilin/run.sh [n_workers]
+mode: weight_sweep
+output_dir: experiments/2026-06-03_weight-sweep-endophilin
+n_trials: 200
+n_sim_per_trial: 30
+val_fraction: 0.2
+seed: 0
+
+sample:
+  name: 25nM_endophilin
+  image_dir: data/25nM_endophilin/images
+  dark_dir: data/25nM_endophilin/dark_frames
+  dls_path: "data/25nM_endophilin/Ternary 0.5% PEGB.xlsx"
+
+weight_configs:
+  - name: equal               # all five terms equal weight
+    discrepancy:
+      pixel_hist: {enabled: true, weight: 1.0}
+      psd:        {enabled: true, weight: 1.0}
+      mean_pixel: {enabled: true, weight: 1.0}
+      quantiles:  {enabled: true, weight: 1.0}
+      skewness:   {enabled: true, weight: 1.0}
+  - name: up_pixel_hist        # pixel_hist 10x, others 1.0
+    discrepancy:
+      pixel_hist: {enabled: true, weight: 10.0}
+      psd:        {enabled: true, weight: 1.0}
+      mean_pixel: {enabled: true, weight: 1.0}
+      quantiles:  {enabled: true, weight: 1.0}
+      skewness:   {enabled: true, weight: 1.0}
+  - name: up_psd               # psd 10x, others 1.0
+    discrepancy:
+      pixel_hist: {enabled: true, weight: 1.0}
+      psd:        {enabled: true, weight: 10.0}
+      mean_pixel: {enabled: true, weight: 1.0}
+      quantiles:  {enabled: true, weight: 1.0}
+      skewness:   {enabled: true, weight: 1.0}
+  - name: up_quantiles         # quantiles 10x, others 1.0
+    discrepancy:
+      pixel_hist: {enabled: true, weight: 1.0}
+      psd:        {enabled: true, weight: 1.0}
+      mean_pixel: {enabled: true, weight: 1.0}
+      quantiles:  {enabled: true, weight: 10.0}
+      skewness:   {enabled: true, weight: 1.0}
+  - name: up_skewness          # skewness 10x, others 1.0
+    discrepancy:
+      pixel_hist: {enabled: true, weight: 1.0}
+      psd:        {enabled: true, weight: 1.0}
+      mean_pixel: {enabled: true, weight: 1.0}
+      quantiles:  {enabled: true, weight: 1.0}
+      skewness:   {enabled: true, weight: 10.0}

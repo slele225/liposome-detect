@@ -1,20 +1,27 @@
-"""Config-driven real-vs-simulated image discrepancy.
+"""Config-driven real-vs-simulated lipid-image discrepancy.
 
-`compute_discrepancy` sums up to six terms, each gated by a per-term
-``{enabled: bool, weight: float}`` entry. An enabled term contributes
-``weight * raw_term``; a disabled term is skipped entirely.
+Calibration is lipid-only and detection-free. ``compute_discrepancy`` sums up
+to five terms, each gated by a per-term ``{enabled: bool, weight: float}``
+entry. An enabled term contributes ``weight * raw_term``; a disabled term is
+skipped entirely.
 
-The DEFAULT weights below are chosen so that calling ``compute_discrepancy``
-with no ``discrepancy_config`` reproduces *exactly* the old hardcoded formula
-from the archive's pipeline.py (Module 9), where the raw terms were divided by
-fixed constants:
+Terms and default weights
+-------------------------
+| term       | weight | raw term                                              |
+|------------|--------|-------------------------------------------------------|
+| pixel_hist | 0.01   | pixel-intensity Wasserstein distance                  |
+| psd        | 1.0    | MSE of log10 radial power spectral density            |
+| mean_pixel | 1.0    | relative squared error of the mean pixel intensity    |
+| quantiles  | 1.0    | sum of relative sq. errors of the 99th & 99.9th pctl  |
+| skewness   | 1.0    | relative squared error of the pixel-distribution skew |
 
-    pixel_hist        -> w_pixel      / 100   == 0.01  * w_pixel
-    spot_intensity    -> w_spot       / 200   == 0.005 * w_spot
-    psd               -> psd_mse      * 1.0   == 1.0   * psd_mse
-    spot_density      -> density_err  * 1.0   == 1.0   * (density_err / norm)
-    mean_pixel        -> mean_err     * 1.0   == 1.0   * (mean_err / norm)
-    protein_nonpuncta -> w_protein_np / 200   == 0.005 * w_protein_np
+``mean_pixel``, ``quantiles`` and ``skewness`` are all RELATIVE squared errors
+(same construction, denominator ``max(real**2, 1)``), so a single shared weight
+of 1.0 puts them on the same scale by design. On a typical 20nM_EGFP trial
+(real lipid 256-crop: mean~201, p99~628, p99.9~1006, skew~4.5) a ~20% miss on a
+quantile or skewness contributes ~0.04-0.09 each — the same order of magnitude
+as ``mean_pixel`` — while ``pixel_hist`` (Wasserstein in ADU, ~tens) * 0.01 and
+``psd`` remain the larger structural terms, as before.
 
 A calibration YAML may supply a ``discrepancy:`` block to override any term's
 ``enabled``/``weight``; unspecified terms fall back to these defaults.
@@ -24,15 +31,19 @@ import numpy as np
 from scipy.stats import wasserstein_distance
 
 
-# Per-term defaults. These reproduce the archive's hardcoded normalization.
+# Per-term defaults.
 DEFAULT_DISCREPANCY_CONFIG = {
-    'pixel_hist':        {'enabled': True, 'weight': 0.01},
-    'spot_intensity':    {'enabled': True, 'weight': 0.005},
-    'psd':               {'enabled': True, 'weight': 1.0},
-    'spot_density':      {'enabled': True, 'weight': 1.0},
-    'mean_pixel':        {'enabled': True, 'weight': 1.0},
-    'protein_nonpuncta': {'enabled': True, 'weight': 0.005},
+    'pixel_hist': {'enabled': True, 'weight': 0.01},
+    'psd':        {'enabled': True, 'weight': 1.0},
+    'mean_pixel': {'enabled': True, 'weight': 1.0},
+    'quantiles':  {'enabled': True, 'weight': 1.0},
+    'skewness':   {'enabled': True, 'weight': 1.0},
 }
+
+
+def _rel_sq_err(real, sim):
+    """Relative squared error, floored like the original mean_pixel term."""
+    return (real - sim)**2 / max(real**2, 1.0)
 
 
 def resolve_discrepancy_config(discrepancy_config=None):
@@ -57,13 +68,12 @@ def resolve_discrepancy_config(discrepancy_config=None):
 
 def compute_discrepancy(real_stats, sim_stats, discrepancy_config=None):
     """
-    Compute scalar discrepancy between real and simulated image statistics.
+    Compute the scalar lipid-image discrepancy between real and simulated stats.
 
     Args:
-        real_stats, sim_stats: dicts from ``compute_image_statistics`` (plus an
-            optional ``protein_nonpuncta`` array).
+        real_stats, sim_stats: dicts from ``compute_image_statistics``.
         discrepancy_config: optional per-term overrides. When ``None`` the
-            defaults reproduce the archive's hardcoded weighting exactly.
+            defaults above are used.
     """
     cfg = resolve_discrepancy_config(discrepancy_config)
     loss = 0.0
@@ -77,15 +87,7 @@ def compute_discrepancy(real_stats, sim_stats, discrepancy_config=None):
         )
         loss += term['weight'] * w_pixel
 
-    # 2. Spot intensity distribution (Wasserstein distance)
-    term = cfg['spot_intensity']
-    if (term['enabled']
-            and len(real_stats['spot_intensities']) > 10
-            and len(sim_stats['spot_intensities']) > 10):
-        w_spot = wasserstein_distance(real_stats['spot_intensities'], sim_stats['spot_intensities'])
-        loss += term['weight'] * w_spot
-
-    # 3. Power spectral density (MSE on log scale)
+    # 2. Power spectral density (MSE on log scale)
     term = cfg['psd']
     if term['enabled']:
         min_len = min(len(real_stats['radial_psd']), len(sim_stats['radial_psd']))
@@ -95,27 +97,24 @@ def compute_discrepancy(real_stats, sim_stats, discrepancy_config=None):
             psd_mse = np.mean((real_psd[1:] - sim_psd[1:])**2)  # skip DC component
             loss += term['weight'] * psd_mse
 
-    # 4. Spot density (squared error)
-    term = cfg['spot_density']
-    if term['enabled']:
-        density_err = (real_stats['mean_spot_count'] - sim_stats['mean_spot_count'])**2
-        loss += term['weight'] * (density_err / max(real_stats['mean_spot_count']**2, 1))
-
-    # 5. Mean pixel intensity (squared error)
+    # 3. Mean pixel intensity (relative squared error)
     term = cfg['mean_pixel']
     if term['enabled']:
-        mean_err = (real_stats['mean_pixel'] - sim_stats['mean_pixel'])**2
-        loss += term['weight'] * (mean_err / max(real_stats['mean_pixel']**2, 1))
+        loss += term['weight'] * _rel_sq_err(real_stats['mean_pixel'],
+                                              sim_stats['mean_pixel'])
 
-    # 6. Protein non-puncta pixel distribution (Wasserstein) — only if both
-    #    sides supplied a 'protein_nonpuncta' array.
-    term = cfg['protein_nonpuncta']
+    # 4. High quantiles of the pixel distribution (sum of relative squared
+    #    errors on the 99th and 99.9th percentiles) — pins the bright tail.
+    term = cfg['quantiles']
     if term['enabled']:
-        real_np = real_stats.get('protein_nonpuncta')
-        sim_np = sim_stats.get('protein_nonpuncta')
-        if (real_np is not None and sim_np is not None
-                and len(real_np) > 10 and len(sim_np) > 10):
-            w_protein_np = wasserstein_distance(real_np, sim_np)
-            loss += term['weight'] * w_protein_np
+        q_err = (_rel_sq_err(real_stats['p99'], sim_stats['p99'])
+                 + _rel_sq_err(real_stats['p999'], sim_stats['p999']))
+        loss += term['weight'] * q_err
+
+    # 5. Skewness of the pixel distribution (relative squared error)
+    term = cfg['skewness']
+    if term['enabled']:
+        loss += term['weight'] * _rel_sq_err(real_stats['skewness'],
+                                             sim_stats['skewness'])
 
     return loss

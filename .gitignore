@@ -7,6 +7,15 @@ datasets/*
 calibrations/*
 !calibrations/.gitkeep
 
+# Calibration-study outputs (generated on the VM). Keep each experiment's
+# scaffold (EXPERIMENT.md, run.sh, analyze.py, config_snapshot/) tracked, but
+# ignore the per-run calibrations, figures and aggregated results.
+experiments/*/runs/
+experiments/*/figures/
+experiments/*/results.json
+experiments/*/aggregated_params.csv
+experiments/*/run_manifest.json
+
 # Python
 __pycache__/
 *.py[cod]

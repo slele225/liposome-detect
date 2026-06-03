@@ -1,329 +1,271 @@
 """The forward generative model: synthesize dual-channel microscopy images.
 
-  - _apply_pmt_noise                  : PMT (ENF) + read noise + frame averaging
-  - simulate_image                    : one dual-channel image + ground truth
-  - simulate_batch                    : batch with a single background pool
-  - simulate_batch_dual_bg            : batch with separate lipid/protein bg
-  - simulate_protein_calibration_batch: no-spot protein channel for calibration
-  - extract_protein_nonpuncta_pixels  : protein pixels away from lipid puncta
-  - _gather_nonpuncta_protein         : collect non-puncta protein pixels
+  - _apply_pmt_noise : PMT (ENF) + read noise + frame averaging, with a
+                       photon-stage optical-background injection
+  - _psf_inv_cov     : inverse covariance of a rotated 2D Gaussian PSF
+  - _render_spot     : add one sum-normalized PSF spot to a clean image
+  - simulate_image   : one (dual- or lipid-only) image + ground truth
+  - simulate_batch   : batch wrapper around simulate_image
 
-Ported verbatim from the archive's pipeline.py (Module 8). The non-puncta
-helpers live here (rather than in calibration) because they are part of the
-simulator's pixel model and operate on both real and simulated arrays.
+Background / noise model
+------------------------
+Spots are rendered as a per-channel rotated 2D Gaussian PSF (covariance matrix
+built from sigma_x, sigma_y, theta) NORMALIZED TO SUM TO 1, so a spot's
+amplitude is its TOTAL integrated flux in ADU (not a peak value).
+
+  * LIPID channel:   clean signal = spot flux only. A flat optical background
+    ``optical_bg_lipid`` (in PHOTONS) is injected at the photon stage inside
+    ``_apply_pmt_noise`` (see the CRITICAL note there) and the dark-frame floor
+    (offset_lipid + read_noise_var_lipid, measured/pinned) is the read-noise +
+    DC offset added there as well.
+  * PROTEIN channel: clean signal = spot flux only, with NO fitted optical
+    background (fixed at 0); its baseline is purely the dark-frame floor.
+    Protein is rendered only when ``lipid_only`` is False — the calibration
+    path is lipid-only and never touches the protein channel.
+
+This replaces the previous bg-patch + haze background model.
 """
 
 import numpy as np
-from scipy.ndimage import maximum_filter
 
 
-def _apply_pmt_noise(clean, gain, read_noise_var, offset, n_frames, enf, rng):
-    """Apply PMT noise (Gaussian with ENF) + read noise + frame averaging."""
+def _apply_pmt_noise(clean, gain, read_noise_var, offset, n_frames, enf, rng,
+                     optical_bg_photons=0.0):
+    """Apply PMT noise (Gaussian with ENF) + read noise + frame averaging.
+
+    ``clean`` is the noise-free signal in ADU (gain * photons) from spots.
+
+    ``optical_bg_photons`` is a flat optical background expressed in PHOTONS.
+
+    CRITICAL — no double gain conversion: the optical background is in photons,
+    so it is added directly to the photon count
+
+        photon_count = clean / gain + optical_bg_photons       [photons]
+
+    NOT to the ADU signal ``clean`` (which would divide it by gain). Its ADU
+    mean contribution is therefore ``optical_bg_photons * gain`` and it carries
+    ENF shot noise exactly like signal photons. (Equivalently one could add
+    ``optical_bg_photons * gain`` to ``clean`` before the /gain step; that is
+    the same value and is intentionally NOT what we do here, to keep the
+    photon-stage injection explicit and impossible to double-convert.)
+
+    The dark-frame floor (read_noise_var + offset) is the read noise and DC
+    offset added AFTER amplification, as before.
+    """
     clean = np.maximum(clean, 0)
+    optical_bg_photons = max(float(optical_bg_photons), 0.0)
     if n_frames <= 1:
         if gain > 0:
-            photon_count = clean / gain
+            photon_count = clean / gain + optical_bg_photons
             mean = photon_count * gain
             variance = enf * photon_count * gain**2
             noisy = mean + rng.normal(0, 1, clean.shape) * np.sqrt(np.maximum(variance, 0))
         else:
-            noisy = clean.copy()
+            # Degenerate (gain<=0) path, not used in calibration; treat the
+            # optical background as a flat additive signal.
+            noisy = clean + optical_bg_photons
         noisy += rng.normal(0, np.sqrt(read_noise_var), clean.shape)
         noisy += offset
         return noisy
     accumulator = np.zeros_like(clean)
     for _ in range(n_frames):
         if gain > 0:
-            photon_count = clean / gain
+            photon_count = clean / gain + optical_bg_photons
             mean = photon_count * gain
             variance = enf * photon_count * gain**2
             frame = mean + rng.normal(0, 1, clean.shape) * np.sqrt(np.maximum(variance, 0))
         else:
-            frame = clean.copy()
+            frame = clean + optical_bg_photons
         frame += rng.normal(0, np.sqrt(read_noise_var), clean.shape)
         accumulator += frame
     return accumulator / n_frames + offset
 
 
-def simulate_image(params, dls_diameters, dls_probs, bg_patches,
-                   bg_patches_protein=None, image_size=512, rng=None,
-                   brightness_scale=1.0):
+def _psf_inv_cov(sigma_x, sigma_y, theta_deg):
+    """Inverse covariance matrix of a rotated 2D Gaussian PSF.
+
+    Sigma = R(theta) @ diag(sigma_x^2, sigma_y^2) @ R(theta)^T, with R the 2D
+    rotation by ``theta_deg`` degrees. Returns inv(Sigma) (a 2x2 array). The
+    PSF value at offset (dx, dy) is then exp(-0.5 * [dx,dy] @ inv(Sigma) @ [dx,dy]^T).
     """
-    Generate one simulated dual-channel microscopy image with ground truth.
+    th = np.deg2rad(theta_deg)
+    c, s = np.cos(th), np.sin(th)
+    R = np.array([[c, -s], [s, c]])
+    D = np.diag([sigma_x**2, sigma_y**2])
+    sigma = R @ D @ R.T
+    return np.linalg.inv(sigma)
+
+
+def _render_spot(img, cx, cy, amplitude, inv_cov, radius, image_size):
+    """Add one spot of total flux ``amplitude`` to ``img`` in place.
+
+    The PSF kernel is the rotated Gaussian defined by ``inv_cov``, normalized to
+    sum to 1 over the (possibly edge-clipped) render window, so the spot's
+    integrated flux equals ``amplitude`` in ADU.
+    """
+    x_lo = max(0, int(cx) - radius)
+    x_hi = min(image_size, int(cx) + radius + 1)
+    y_lo = max(0, int(cy) - radius)
+    y_hi = min(image_size, int(cy) + radius + 1)
+    if x_hi <= x_lo or y_hi <= y_lo:
+        return
+    yy, xx = np.mgrid[y_lo:y_hi, x_lo:x_hi]
+    dx = xx - cx
+    dy = yy - cy
+    # quadratic form [dx,dy] @ inv_cov @ [dx,dy]^T for the symmetric 2x2 inv_cov
+    quad = (inv_cov[0, 0] * dx * dx
+            + 2.0 * inv_cov[0, 1] * dx * dy
+            + inv_cov[1, 1] * dy * dy)
+    kernel = np.exp(-0.5 * quad)
+    ksum = kernel.sum()
+    if ksum > 0:
+        kernel /= ksum
+    img[y_lo:y_hi, x_lo:x_hi] += amplitude * kernel
+
+
+def simulate_image(params, dls_diameters, dls_probs, image_size=256, rng=None,
+                   lipid_only=False):
+    """
+    Generate one simulated microscopy image with ground truth.
 
     Args:
-        params: dict with simulator parameters
-        dls_diameters: array of diameters from DLS (nm)
-        dls_probs: probability for each diameter
-        bg_patches: list of real background patches to sample from
-        image_size: image dimensions (square)
-        rng: numpy random generator
+        params: dict with simulator parameters (see below).
+        dls_diameters: array of diameters from DLS (nm).
+        dls_probs: probability for each diameter.
+        image_size: square image size in pixels (default 256, matching the
+            center-crop applied to real images in ``io.load_tiff_stack``).
+        rng: numpy random generator.
+        lipid_only: if True, skip protein rendering entirely and return None for
+            the protein channel — used by the lipid-only calibration path so no
+            protein parameters are required.
+
+    Parameters consumed (always):  spot_density, lipid_brightness, gain, enf,
+        psf_sigma_x, psf_sigma_y, psf_theta, offset_lipid, read_noise_var_lipid,
+        optical_bg_lipid, n_frame_avg.
+    Parameters consumed (generation only, when lipid_only is False):
+        protein_brightness, curvature_alpha, psf_sigma_x_protein,
+        psf_sigma_y_protein, psf_theta_protein, offset_protein,
+        read_noise_var_protein (+ optional independent_protein_* knobs).
 
     Returns:
-        protein_img: simulated protein channel (512x512)
-        lipid_img: simulated lipid channel (512x512)
-        ground_truth: list of dicts with spot properties
+        protein_img (or None if lipid_only), lipid_img, ground_truth (list of dicts).
     """
     if rng is None:
         rng = np.random.default_rng()
 
-    # Unpack parameters
-    spot_density = params['spot_density']        # mean spots per FOV
-    labeling_eff = params['labeling_eff']         # PEAK intensity scale (counts above bg for d=100nm), shared between channels
-    curvature_alpha = params['curvature_alpha']   # curvature exponent
-    psf_sigma_x = params['psf_sigma_x']           # PSF width x (pixels)
-    psf_sigma_y = params['psf_sigma_y']           # PSF width y (pixels)
-    gain = params['gain']                         # effective PMT gain
-    offset_protein = params['offset_protein']     # baseline offset protein channel
-    offset_lipid = params['offset_lipid']         # baseline offset lipid channel
-    read_noise_var_protein = params['read_noise_var_protein']
-    read_noise_var_lipid = params['read_noise_var_lipid']
-    bg_amplitude = params['bg_amplitude']         # background scaling factor
-    haze_level = params.get('haze_level', 0)      # out-of-focus haze
-    n_frame_avg = params.get('n_frame_avg', 3)    # frame averaging (3 per FV3000 metadata)
+    spot_density = params['spot_density']            # mean spots per FOV
+    lipid_brightness = params['lipid_brightness']    # TOTAL flux (ADU) of a d=100nm lipid spot
+    gain = params['gain']                            # effective PMT gain
+    enf = params.get('enf', 1.3)                     # excess noise factor
+    n_frame_avg = params.get('n_frame_avg', 3)       # frame averaging (FV3000: 3)
+    offset_lipid = params['offset_lipid']            # dark-frame DC offset (pinned)
+    read_noise_var_lipid = params['read_noise_var_lipid']  # dark-frame read noise (pinned)
+    optical_bg_lipid = params.get('optical_bg_lipid', 0.0)  # optical background in PHOTONS
 
-    # Sample number of spots
+    # Lipid PSF (fitted in calibration): rotated 2D Gaussian via covariance.
+    psf_sigma_x = params['psf_sigma_x']
+    psf_sigma_y = params['psf_sigma_y']
+    psf_theta = params.get('psf_theta', 0.0)
+    inv_lipid = _psf_inv_cov(psf_sigma_x, psf_sigma_y, psf_theta)
+    r_lipid = int(np.ceil(max(psf_sigma_x, psf_sigma_y) * 4))
+
+    # Sample number of spots and their diameters from the DLS distribution.
     n_spots = rng.poisson(spot_density)
-
-    # Sample diameters from DLS
     diameters = rng.choice(dls_diameters, size=n_spots, p=dls_probs)
 
-    # Compute intensities
-    # Lipid: proportional to surface area (d^2)
-    lipid_intensities = labeling_eff * (diameters / 100.0)**2
+    # Lipid spot amplitude (total flux) ~ surface area (d^2).
+    lipid_amp = lipid_brightness * (diameters / 100.0)**2
 
-    # Protein: curvature-dependent binding.
-    # alpha=2 means no curvature preference (proportional to area);
-    # alpha<2 means small liposomes bind more protein per unit area;
-    # alpha=0 means no binding (EGFP-like, intensity ~ labeling_eff * brightness_scale).
-    # eta is a small per-spot multiplicative log-normal noise (biological heterogeneity).
-    eta = rng.lognormal(mean=0.0, sigma=0.1, size=n_spots)
-    if params.get('independent_protein_intensity', False):
-        # A_protein sampled independently of diameter (no power-law prior).
-        ip_mu = params.get('independent_protein_mu', np.log(50.0))
-        ip_sigma = params.get('independent_protein_sigma', 0.5)
-        protein_intensities = rng.lognormal(mean=ip_mu, sigma=ip_sigma,
-                                            size=n_spots)
-    else:
-        protein_intensities = (labeling_eff * brightness_scale
-                               * (diameters / 100.0)**curvature_alpha * eta)
-
-    # Random positions
+    # Random positions. Keep the existing edge margin (10 px) for spot placement
+    # on the (now 256x256) grid so spot centers stay off the very edge.
     positions_x = rng.uniform(10, image_size - 10, size=n_spots)
     positions_y = rng.uniform(10, image_size - 10, size=n_spots)
 
-    # Sample a background from real data
-    # If bg_patches_protein is provided separately, use it; otherwise reuse bg_patches
-    if bg_patches_protein is None:
-        bg_patches_protein_use = bg_patches
+    clean_lipid = np.zeros((image_size, image_size), dtype=np.float64)
+
+    if not lipid_only:
+        # Protein channel (generation only). alpha controls curvature
+        # preference; alpha=2 -> proportional to area, alpha<2 -> small
+        # liposomes bind more protein per unit area. eta is per-spot
+        # log-normal biological heterogeneity.
+        curvature_alpha = params.get('curvature_alpha', 1.0)
+        protein_brightness = params.get('protein_brightness', lipid_brightness)
+        psf_sigma_x_p = params.get('psf_sigma_x_protein', psf_sigma_x)
+        psf_sigma_y_p = params.get('psf_sigma_y_protein', psf_sigma_y)
+        psf_theta_p = params.get('psf_theta_protein', 0.0)
+        inv_protein = _psf_inv_cov(psf_sigma_x_p, psf_sigma_y_p, psf_theta_p)
+        r_protein = int(np.ceil(max(psf_sigma_x_p, psf_sigma_y_p) * 4))
+        eta = rng.lognormal(mean=0.0, sigma=0.1, size=n_spots)
+        if params.get('independent_protein_intensity', False):
+            # A_protein sampled independently of diameter (no power-law prior).
+            ip_mu = params.get('independent_protein_mu', np.log(50.0))
+            ip_sigma = params.get('independent_protein_sigma', 0.5)
+            protein_amp = rng.lognormal(mean=ip_mu, sigma=ip_sigma, size=n_spots)
+        else:
+            protein_amp = (protein_brightness
+                           * (diameters / 100.0)**curvature_alpha * eta)
+        clean_protein = np.zeros((image_size, image_size), dtype=np.float64)
     else:
-        bg_patches_protein_use = bg_patches_protein
+        clean_protein = None
 
-    bg_idx = rng.integers(0, len(bg_patches))
-    bg_lipid = bg_patches[bg_idx].copy() * bg_amplitude
-    bg_protein_idx = rng.integers(0, len(bg_patches_protein_use))
-    # Protein channel has its own scale + autofluorescence baseline (per-sample
-    # in joint calibration, optionally randomized per-image at training-data
-    # generation time so the network sees the full EGFP→endophilin range).
-    bg_amplitude_protein = params.get('bg_amplitude_protein', bg_amplitude)
-    autofl_protein = params.get('autofl_protein', 0.0)
-    bg_protein = (bg_patches_protein_use[bg_protein_idx].copy()
-                  * bg_amplitude_protein + autofl_protein)
-
-    # Ensure backgrounds are the right size
-    if bg_lipid.shape != (image_size, image_size):
-        bg_lipid = np.full((image_size, image_size), np.median(bg_lipid))
-    if bg_protein.shape != (image_size, image_size):
-        bg_protein = np.full((image_size, image_size), np.median(bg_protein))
-
-    # Add haze (smooth out-of-focus fluorescence)
-    if haze_level > 0:
-        bg_lipid += haze_level
-        bg_protein += haze_level * 0.5
-
-    # Start with clean signal on background
-    clean_lipid = bg_lipid.copy()
-    clean_protein = bg_protein.copy()
-
-    # Render spots as 2D Gaussians
-    # Intensities are PEAK values above background (at the spot center)
-    # A spot with peak=500 and sigma=2 contributes 500 counts at the center pixel
+    # Render spots: lipid with the lipid PSF, protein (if any) with the protein PSF.
     ground_truth = []
-
-    # Use truncated rendering for speed (only compute Gaussian within ±4*sigma)
-    render_radius = int(np.ceil(max(psf_sigma_x, psf_sigma_y) * 4))
-
     for i in range(n_spots):
         cx, cy = positions_x[i], positions_y[i]
-        li, pi = lipid_intensities[i], protein_intensities[i]
-
-        # Compute Gaussian in a small window
-        x_lo = max(0, int(cx) - render_radius)
-        x_hi = min(image_size, int(cx) + render_radius + 1)
-        y_lo = max(0, int(cy) - render_radius)
-        y_hi = min(image_size, int(cy) + render_radius + 1)
-
-        yy, xx = np.mgrid[y_lo:y_hi, x_lo:x_hi]
-        gauss = np.exp(-((xx - cx)**2 / (2 * psf_sigma_x**2) +
-                         (yy - cy)**2 / (2 * psf_sigma_y**2)))
-
-        # Use PEAK intensity parameterization:
-        # gauss peaks at 1.0 at the center, so li * gauss peaks at li
-        clean_lipid[y_lo:y_hi, x_lo:x_hi] += li * gauss
-        clean_protein[y_lo:y_hi, x_lo:x_hi] += pi * gauss
-
-        ground_truth.append({
+        _render_spot(clean_lipid, cx, cy, lipid_amp[i], inv_lipid, r_lipid, image_size)
+        gt = {
             'x': float(cx), 'y': float(cy),
             'diameter_nm': float(diameters[i]),
-            'lipid_intensity': float(li),
-            'protein_intensity': float(pi),
-        })
+            'lipid_intensity': float(lipid_amp[i]),
+        }
+        if not lipid_only:
+            _render_spot(clean_protein, cx, cy, protein_amp[i], inv_protein,
+                         r_protein, image_size)
+            gt['protein_intensity'] = float(protein_amp[i])
+        ground_truth.append(gt)
 
-    # Apply noise model
-    # Real microscope does frame averaging (3 scans averaged per image per FV3000 metadata)
-    # We simulate this by adding noise independently n_frame_avg times and averaging
-    # PMTs have an excess noise factor (ENF) that makes per-photon variance higher than
-    # pure Poisson. We use a Gaussian approximation: output ~ N(gain*N, ENF*gain^2*N)
-    # This produces smooth noise distributions matching real PMT data.
-
-    enf = params.get('enf', 1.3)  # excess noise factor (typical 1.0-2.0 for PMTs)
-
+    # Lipid noise: optical_bg_lipid is injected in PHOTON units inside the PMT
+    # noise step (no double gain conversion); the dark-frame floor is added there.
     noisy_lipid = _apply_pmt_noise(
-        clean_lipid, gain, read_noise_var_lipid, offset_lipid, n_frame_avg, enf, rng
-    )
-    noisy_protein = _apply_pmt_noise(
-        clean_protein, gain, read_noise_var_protein, offset_protein, n_frame_avg, enf, rng
-    )
+        clean_lipid, gain, read_noise_var_lipid, offset_lipid,
+        n_frame_avg, enf, rng, optical_bg_photons=optical_bg_lipid)
+    noisy_lipid = np.clip(noisy_lipid, 0, 4095)  # 12-bit range
 
-    # Clip to 12-bit range
-    noisy_lipid = np.clip(noisy_lipid, 0, 4095)
+    if lipid_only:
+        return None, noisy_lipid, ground_truth
+
+    # Protein noise: NO fitted optical background (fixed at 0); baseline is the
+    # dark-frame floor only.
+    offset_protein = params['offset_protein']
+    read_noise_var_protein = params['read_noise_var_protein']
+    noisy_protein = _apply_pmt_noise(
+        clean_protein, gain, read_noise_var_protein, offset_protein,
+        n_frame_avg, enf, rng, optical_bg_photons=0.0)
     noisy_protein = np.clip(noisy_protein, 0, 4095)
 
     return noisy_protein, noisy_lipid, ground_truth
 
 
-def simulate_batch(params, dls_diameters, dls_probs, bg_patches,
-                   n_images=50, image_size=512, seed=None):
-    """Generate a batch of simulated images (single background pool)."""
+def simulate_batch(params, dls_diameters, dls_probs, n_images=50,
+                   image_size=256, seed=None, lipid_only=False):
+    """Generate a batch of simulated images.
+
+    Returns (all_protein, all_lipid, all_gt). When ``lipid_only`` is True,
+    ``all_protein`` is a list of ``None`` (the protein channel is not rendered).
+    """
     rng = np.random.default_rng(seed)
 
     all_protein = []
     all_lipid = []
     all_gt = []
 
-    for i in range(n_images):
-        protein, lipid, gt = simulate_image(
-            params, dls_diameters, dls_probs, bg_patches,
-            image_size=image_size, rng=rng
-        )
-        all_protein.append(protein)
-        all_lipid.append(lipid)
-        all_gt.append(gt)
-
-    return all_protein, all_lipid, all_gt
-
-
-def simulate_batch_dual_bg(params, dls_diameters, dls_probs,
-                           bg_patches_lipid, bg_patches_protein,
-                           n_images=50, image_size=512, seed=None):
-    """Generate a batch of simulated images with separate lipid and protein backgrounds."""
-    rng = np.random.default_rng(seed)
-
-    all_protein = []
-    all_lipid = []
-    all_gt = []
-
-    for i in range(n_images):
+    for _ in range(n_images):
         protein, lipid, gt = simulate_image(
             params, dls_diameters, dls_probs,
-            bg_patches=bg_patches_lipid,
-            bg_patches_protein=bg_patches_protein,
-            image_size=image_size, rng=rng
+            image_size=image_size, rng=rng, lipid_only=lipid_only,
         )
         all_protein.append(protein)
         all_lipid.append(lipid)
         all_gt.append(gt)
 
     return all_protein, all_lipid, all_gt
-
-
-def simulate_protein_calibration_batch(shared_params, sample_params, dark_results,
-                                       bg_patches_protein, n_images=30,
-                                       image_size=512, seed=None):
-    """
-    Generate protein-channel images for calibration: bg + autofluorescence + noise
-    only (no spot-bound protein). Used to match non-puncta protein pixel
-    distributions during joint calibration.
-    """
-    rng = np.random.default_rng(seed)
-    gain = shared_params['gain']
-    enf = shared_params.get('enf', 1.3)
-    haze = shared_params.get('haze_level', 0.0)
-    n_frames = shared_params.get('n_frame_avg', 3)
-    bg_amp_p = sample_params['bg_amplitude_protein']
-    autofl = sample_params['autofl_protein']
-    vscale = sample_params['voltage_scale_protein']
-    offset_p = dark_results['protein']['offset']
-    rn_var_p = dark_results['protein']['read_noise_var']
-
-    out = []
-    for _ in range(n_images):
-        idx = rng.integers(0, len(bg_patches_protein))
-        bg = bg_patches_protein[idx]
-        if bg.shape != (image_size, image_size):
-            bg = np.full((image_size, image_size), float(np.median(bg)))
-        clean = (bg * bg_amp_p + autofl + 0.5 * haze) * vscale
-        noisy = _apply_pmt_noise(clean, gain, rn_var_p, offset_p, n_frames, enf, rng)
-        out.append(np.clip(noisy, 0, 4095))
-    return out
-
-
-def extract_protein_nonpuncta_pixels(protein_img, lipid_img, mask_radius=2,
-                                     snr_threshold=3.0):
-    """
-    Return the protein-channel pixel values at locations far from lipid puncta.
-
-    Detects local maxima in the lipid channel above a simple background+SNR
-    threshold (no trained model), masks a (2*mask_radius+1) square around each
-    peak, and returns the protein pixels at all UN-masked positions, flattened.
-    """
-    bg = float(np.median(lipid_img))
-    bg_std = float(np.std(lipid_img[lipid_img < np.percentile(lipid_img, 70)]))
-    threshold = bg + snr_threshold * bg_std
-    local_max = maximum_filter(lipid_img, size=2 * mask_radius + 1)
-    peaks = (lipid_img == local_max) & (lipid_img > threshold)
-
-    mask = np.zeros_like(lipid_img, dtype=bool)
-    coords = np.argwhere(peaks)
-    H, W = lipid_img.shape
-    for py, px in coords:
-        y0 = max(0, py - mask_radius); y1 = min(H, py + mask_radius + 1)
-        x0 = max(0, px - mask_radius); x1 = min(W, px + mask_radius + 1)
-        mask[y0:y1, x0:x1] = True
-    return protein_img[~mask].astype(np.float64)
-
-
-def _gather_nonpuncta_protein(images_dict_or_arrays, sim_protein_arrays=None,
-                              sim_lipid_arrays=None, max_pixels=200000,
-                              rng=None):
-    """
-    Collect non-puncta protein pixels from either a list of real image dicts
-    (each with 'protein' and 'lipid') or aligned simulated arrays.
-    Returns a 1d float array, subsampled to at most `max_pixels`.
-    """
-    if rng is None:
-        rng = np.random.default_rng(0)
-    pixels = []
-    if sim_protein_arrays is None:
-        for d in images_dict_or_arrays:
-            pixels.append(extract_protein_nonpuncta_pixels(d['protein'], d['lipid']))
-    else:
-        for p_img, l_img in zip(sim_protein_arrays, sim_lipid_arrays):
-            pixels.append(extract_protein_nonpuncta_pixels(p_img, l_img))
-    if not pixels:
-        return np.array([])
-    flat = np.concatenate(pixels)
-    if flat.size > max_pixels:
-        idx = rng.choice(flat.size, size=max_pixels, replace=False)
-        flat = flat[idx]
-    return flat

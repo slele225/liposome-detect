@@ -1,13 +1,19 @@
 """Summary statistics for moment matching.
 
-  - compute_image_statistics: histograms, radial PSD, spot stats, noise curve
+  - compute_image_statistics: pixel histogram, high quantiles, skewness, radial
+    PSD, a crude spot count, and a background noise curve.
 
-Works on both real image dicts and simulated numpy arrays. Ported verbatim
-from the archive's pipeline.py (Module 7).
+Works on both real image dicts and simulated numpy arrays.
+
+The calibration objective is detection-free: the per-spot intensity/width
+extraction was removed. A crude local-maximum COUNT is still computed because
+``optimize.py`` uses ``mean_spot_count`` only to anchor the per-sample
+``spot_density`` prior range (ref_spots); it does not enter any discrepancy term.
 """
 
 import numpy as np
 from scipy.ndimage import maximum_filter
+from scipy.stats import skew
 
 
 def compute_image_statistics(images_or_arrays, channel=None, is_simulated=False):
@@ -16,7 +22,8 @@ def compute_image_statistics(images_or_arrays, channel=None, is_simulated=False)
     Works on both real image dicts and simulated numpy arrays.
 
     Returns:
-        dict of statistics (histograms, spectra, spot stats)
+        dict of statistics (pixel histogram, high quantiles, skewness, radial
+        PSD, mean/std pixel, crude spot count, background noise curve).
     """
     # Extract the right channel
     if is_simulated:
@@ -25,8 +32,6 @@ def compute_image_statistics(images_or_arrays, channel=None, is_simulated=False)
         arrays = [img[channel] for img in images_or_arrays]
 
     all_pixels = []
-    all_spot_intensities = []
-    all_spot_widths = []
     spot_counts = []
     all_psd = []
     noise_means = []
@@ -52,35 +57,17 @@ def compute_image_statistics(images_or_arrays, channel=None, is_simulated=False)
                 radial_psd[ri] = np.mean(ring)
         all_psd.append(radial_psd)
 
-        # Spot detection (crude local max finder)
+        # Crude local-max spot COUNT (detection-free objective: used only to
+        # anchor the spot_density prior range, not in any discrepancy term).
         bg = np.median(img)
         bg_std = np.std(img[img < np.percentile(img, 70)])
         threshold = bg + 3 * bg_std
 
         local_max = maximum_filter(img, size=7)
         peaks = (img == local_max) & (img > threshold)
-        peak_coords = np.argwhere(peaks)
+        spot_counts.append(int(peaks.sum()))
 
-        spot_counts.append(len(peak_coords))
-
-        for py, px in peak_coords:
-            all_spot_intensities.append(float(img[py, px]))
-
-            # Estimate width via second moment
-            r_crop = 4
-            if (py > r_crop and py < img.shape[0]-r_crop and
-                px > r_crop and px < img.shape[1]-r_crop):
-                patch = img[py-r_crop:py+r_crop+1, px-r_crop:px+r_crop+1]
-                patch_bg = np.min(patch)
-                patch_sub = patch - patch_bg
-                total = patch_sub.sum()
-                if total > 0:
-                    yy, xx = np.mgrid[-r_crop:r_crop+1, -r_crop:r_crop+1]
-                    sigma_est = np.sqrt((patch_sub * (xx**2 + yy**2)).sum() / total / 2)
-                    if 0.5 < sigma_est < 10:
-                        all_spot_widths.append(float(sigma_est))
-
-        # Noise in background regions (for noise-vs-signal curve)
+        # Noise in background regions (for the noise-vs-signal curve)
         patch_size = 8
         for y in range(0, img.shape[0] - patch_size, patch_size * 2):
             for x in range(0, img.shape[1] - patch_size, patch_size * 2):
@@ -98,13 +85,6 @@ def compute_image_statistics(images_or_arrays, channel=None, is_simulated=False)
     hist_bins = np.linspace(0, 1000, 200)
     pixel_hist, _ = np.histogram(all_pixels, bins=hist_bins, density=True)
 
-    # Spot intensity histogram
-    spot_int_bins = np.linspace(0, 2000, 100)
-    if len(all_spot_intensities) > 0:
-        spot_hist, _ = np.histogram(all_spot_intensities, bins=spot_int_bins, density=True)
-    else:
-        spot_hist = np.zeros(len(spot_int_bins) - 1)
-
     # Average PSD
     min_len = min(len(p) for p in all_psd)
     avg_psd = np.mean([p[:min_len] for p in all_psd], axis=0)
@@ -112,17 +92,18 @@ def compute_image_statistics(images_or_arrays, channel=None, is_simulated=False)
     stats = {
         'pixel_hist': pixel_hist,
         'pixel_hist_bins': hist_bins,
-        'spot_intensity_hist': spot_hist,
-        'spot_intensity_bins': spot_int_bins,
-        'spot_intensities': np.array(all_spot_intensities) if all_spot_intensities else np.array([]),
-        'spot_widths': np.array(all_spot_widths) if all_spot_widths else np.array([]),
-        'mean_spot_count': float(np.mean(spot_counts)) if spot_counts else 0,
-        'std_spot_count': float(np.std(spot_counts)) if spot_counts else 0,
         'radial_psd': avg_psd,
         'noise_means': np.array(noise_means),
         'noise_vars': np.array(noise_vars),
         'mean_pixel': float(np.mean(all_pixels)),
         'std_pixel': float(np.std(all_pixels)),
+        # High quantiles + skewness pin the bright-spot tail without detection.
+        'p99': float(np.percentile(all_pixels, 99)),
+        'p999': float(np.percentile(all_pixels, 99.9)),
+        'skewness': float(skew(all_pixels)),
+        # Crude spot count: anchors the spot_density prior only (see module doc).
+        'mean_spot_count': float(np.mean(spot_counts)) if spot_counts else 0.0,
+        'std_spot_count': float(np.std(spot_counts)) if spot_counts else 0.0,
     }
 
     return stats

@@ -1,12 +1,17 @@
 """Loading and parsing of raw inputs.
 
   - parse_dls          : DLS xlsx -> diameter distribution
+  - center_crop        : center-crop a 2D array to CROP_SIZE x CROP_SIZE
   - load_tiff_stack    : one 3-channel TIFF -> {protein, lipid, transmitted}
   - load_all_images    : all TIFFs in a directory
   - analyze_dark_frames: per-channel offset + read noise from dark frames
 
 Channels: 0=protein(488nm), 1=lipid(561nm), 2=transmitted light.
-Ported verbatim from the archive's pipeline.py (Modules 1-3).
+
+All real images (sample frames AND dark frames) are center-cropped to
+CROP_SIZE x CROP_SIZE at load time, so every downstream consumer
+(dark-frame analysis, gain/PSF estimation, calibration statistics) operates on
+the same central region, matching the simulator which generates at CROP_SIZE.
 """
 
 import glob
@@ -15,6 +20,23 @@ import os
 import numpy as np
 import openpyxl
 import tifffile
+
+# Center-crop size applied to every loaded image. The simulator generates
+# images of this same size (see simulator.forward_model.simulate_image).
+CROP_SIZE = 256
+
+
+def center_crop(arr, size=CROP_SIZE):
+    """Return the center ``size`` x ``size`` region of a 2D array.
+
+    If an axis is smaller than ``size`` the full extent of that axis is kept.
+    """
+    h, w = arr.shape
+    half = size // 2
+    cy, cx = h // 2, w // 2
+    y0 = max(0, cy - half)
+    x0 = max(0, cx - half)
+    return arr[y0:y0 + size, x0:x0 + size]
 
 
 def parse_dls(xlsx_path, weighting='number', max_diameter_nm=500):
@@ -84,7 +106,8 @@ def parse_dls(xlsx_path, weighting='number', max_diameter_nm=500):
 
 def load_tiff_stack(path):
     """
-    Load a 3-channel TIFF. Returns dict with 'protein', 'lipid', 'transmitted'.
+    Load a 3-channel TIFF. Returns dict with 'protein', 'lipid', 'transmitted',
+    each center-cropped to CROP_SIZE x CROP_SIZE.
     Channels: 0=protein(488), 1=lipid(561), 2=transmitted light.
     """
     img = tifffile.imread(path)
@@ -94,13 +117,14 @@ def load_tiff_stack(path):
         raise ValueError(f"Expected 3-channel TIFF, got single 2D image: {path}")
     elif img.ndim == 3:
         if img.shape[0] == 3:
-            return {'protein': img[0].astype(np.float64),
-                    'lipid': img[1].astype(np.float64),
-                    'transmitted': img[2].astype(np.float64)}
+            channels = (img[0], img[1], img[2])
         elif img.shape[2] == 3:
-            return {'protein': img[:,:,0].astype(np.float64),
-                    'lipid': img[:,:,1].astype(np.float64),
-                    'transmitted': img[:,:,2].astype(np.float64)}
+            channels = (img[:, :, 0], img[:, :, 1], img[:, :, 2])
+        else:
+            raise ValueError(f"Unexpected TIFF shape: {img.shape}")
+        # Center-crop each channel to CROP_SIZE x CROP_SIZE.
+        prot, lip, trans = (center_crop(c).astype(np.float64) for c in channels)
+        return {'protein': prot, 'lipid': lip, 'transmitted': trans}
 
     raise ValueError(f"Unexpected TIFF shape: {img.shape}")
 
@@ -126,6 +150,9 @@ def analyze_dark_frames(dark_dir, pattern="*.tif*"):
     """
     Analyze dark frames to get per-channel offset and read noise.
 
+    Dark frames are loaded via ``load_all_images`` and therefore center-cropped
+    to CROP_SIZE x CROP_SIZE, matching the sample-image and simulator crop.
+
     Returns:
         dict with per-channel 'offset' (mean) and 'read_noise_var' (variance)
     """
@@ -137,7 +164,7 @@ def analyze_dark_frames(dark_dir, pattern="*.tif*"):
 
     results = {}
     for channel in ['protein', 'lipid']:
-        stack = np.array([d[channel] for d in darks])  # shape: (N, 512, 512)
+        stack = np.array([d[channel] for d in darks])  # shape: (N, CROP_SIZE, CROP_SIZE)
 
         # Per-pixel mean (offset map) and variance (read noise map)
         offset_map = np.mean(stack, axis=0)

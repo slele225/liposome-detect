@@ -3,13 +3,15 @@
   - estimate_gain      : effective PMT gain via photon-transfer (Var vs Mean)
   - gaussian_2d        : 2D Gaussian model used for PSF fitting
   - estimate_psf       : PSF widths from bright isolated spots
-  - extract_backgrounds: spot-masked background structure
 
-Ported verbatim from the archive's pipeline.py (Modules 4-6).
+All estimators operate on the center-cropped images returned by
+``io.load_all_images`` (CROP_SIZE x CROP_SIZE), matching the simulator.
+
+Ported from the archive's pipeline.py (Modules 4-6).
 """
 
 import numpy as np
-from scipy.ndimage import maximum_filter, median_filter
+from scipy.ndimage import maximum_filter
 from scipy.optimize import curve_fit
 
 
@@ -175,61 +177,3 @@ def estimate_psf(images, channel='lipid', crop_radius=7, min_separation=15,
     print(f"  Spread: sigma_x std={np.std(sigmas[:,0]):.2f}, sigma_y std={np.std(sigmas[:,1]):.2f}")
 
     return sigma_x, sigma_y, all_sigmas
-
-
-def extract_backgrounds(images, channel='lipid', spot_mask_radius=8):
-    """
-    Extract background structure by masking out detected spots.
-
-    Returns:
-        bg_patches: list of background images (spots masked and interpolated)
-        bg_stats: dict with background statistics
-    """
-    print(f"=== Background Extraction ({channel}) ===")
-
-    bg_patches = []
-    bg_means = []
-    bg_stds = []
-
-    for img_dict in images:
-        img = img_dict[channel]
-
-        # Detect spots (crude: local maxima above threshold)
-        bg_level = np.median(img)
-        bg_std = np.std(img[img < np.percentile(img, 70)])
-        threshold = bg_level + 3 * bg_std
-
-        local_max = maximum_filter(img, size=2*spot_mask_radius+1)
-        peaks = (img == local_max) & (img > threshold)
-
-        # Create mask around each peak
-        mask = np.zeros_like(img, dtype=bool)
-        peak_coords = np.argwhere(peaks)
-        for py, px in peak_coords:
-            y_lo = max(0, py - spot_mask_radius)
-            y_hi = min(img.shape[0], py + spot_mask_radius + 1)
-            x_lo = max(0, px - spot_mask_radius)
-            x_hi = min(img.shape[1], px + spot_mask_radius + 1)
-            mask[y_lo:y_hi, x_lo:x_hi] = True
-
-        # Fill masked regions with median-filtered background estimate
-        bg = img.copy()
-        bg_smooth = median_filter(img, size=2*spot_mask_radius+1)
-        bg[mask] = bg_smooth[mask]
-
-        bg_patches.append(bg)
-        bg_means.append(np.mean(bg[~mask]))
-        bg_stds.append(np.std(bg[~mask]))
-
-    bg_stats = {
-        'mean': float(np.mean(bg_means)),
-        'std': float(np.mean(bg_stds)),
-        'min_mean': float(np.min(bg_means)),
-        'max_mean': float(np.max(bg_means)),
-    }
-
-    print(f"  Extracted {len(bg_patches)} background patches")
-    print(f"  Background mean={bg_stats['mean']:.1f}, std={bg_stats['std']:.1f}")
-    print(f"  Range of means: {bg_stats['min_mean']:.1f} - {bg_stats['max_mean']:.1f}")
-
-    return bg_patches, bg_stats
