@@ -8,13 +8,21 @@
 #   N_WORKERS=32 ./scripts/run_all_calibration_studies.sh  # via env var, OR
 #   ./scripts/run_all_calibration_studies.sh               # default os.cpu_count()
 #
-# The worker count is passed through to each experiment's run.sh. Override the
-# interpreter for all studies with PYTHON=... (e.g. PYTHON="uv run python").
+# The worker count is passed through to each experiment's run.sh. The interpreter
+# is resolved once by scripts/_resolve_python.sh ($PYTHON if set, else
+# `uv run python`, else python3/python) and exported so all studies reuse it.
+# Set DRY_RUN=1 to echo every command instead of running it.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
+
+# Resolve the interpreter once and export it so each child run.sh reuses it
+# instead of re-resolving. (DRY_RUN, if set, is already in the environment and
+# is inherited by the child run.sh scripts.)
+source "$REPO_ROOT/scripts/_resolve_python.sh"
+export PYTHON
 
 # n_workers: positional arg, else $N_WORKERS, else empty (each run.sh then lets
 # Python default to os.cpu_count()). Export so the child run.sh scripts see it.

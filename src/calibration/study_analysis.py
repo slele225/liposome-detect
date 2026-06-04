@@ -24,13 +24,25 @@ PARAM_ORDER = (
 )
 
 
-def load_results(exp_dir, ok_only=True):
+def load_results(exp_dir, ok_only=True, aggregate_if_missing=True):
     """Load ``<exp_dir>/results.json`` -> list of run dicts.
+
+    If results.json is missing and ``aggregate_if_missing`` (default), it is
+    rebuilt from the experiment's existing ``runs/`` via
+    ``study.aggregate_from_runs`` — re-aggregation only, NO recalibration. This
+    is what lets ``analyze.py`` run standalone on existing run outputs.
 
     With ``ok_only`` (default), drop runs whose status is not ``'ok'`` and warn
     about how many were dropped.
     """
-    path = Path(exp_dir) / 'results.json'
+    exp_dir = Path(exp_dir)
+    path = exp_dir / 'results.json'
+    if not path.exists() and aggregate_if_missing:
+        # Lazy import: keeps study_analysis import-light and avoids any cycle.
+        from src.calibration.study import aggregate_from_runs
+        print(f"[analysis] {path} missing — re-aggregating from "
+              f"{exp_dir / 'runs'} (no recalibration).")
+        aggregate_from_runs(exp_dir)
     records = json.loads(path.read_text())
     if ok_only:
         kept = [r for r in records if r.get('status') == 'ok'

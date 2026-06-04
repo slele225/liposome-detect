@@ -62,10 +62,32 @@ Outputs land in `runs/repeat_000/` … `runs/repeat_099/` (per-repeat calibratio
 results, plots, `trials.csv`, `convergence.png`), plus `results.json`,
 `aggregated_params.csv`, `run_manifest.json`, and `figures/`.
 
+**Re-run only the analysis** on existing `runs/` (no recalibration):
+`python experiments/2026-06-03_bootstrap-endophilin/analyze.py` — it rebuilds
+`results.json` from the 100 per-repeat `calibration_results.json` if missing,
+then redraws the figures. Force a rebuild with
+`python -m src.calibration.study --aggregate-only experiments/2026-06-03_bootstrap-endophilin`.
+
 ## Findings
 
-> **TODO: fill after the VM run.** (Studies are not run during scaffolding.)
-> Report the per-parameter CV table and which parameters are tight (low CV,
-> robust to subset) vs loose (high CV, subset-sensitive). Note any repeats that
-> failed or converged poorly (see `run_manifest.json` and each repeat's
-> `convergence.png`).
+All 100/100 repeats succeeded (d=25 of 55 images, a distinct subset per repeat,
+200 trials each). Per-parameter coefficient of variation across repeats
+(`figures/bootstrap_summary.csv`, `figures/bootstrap_distributions.png`):
+
+| parameter         | CV     | verdict                              |
+|-------------------|--------|--------------------------------------|
+| psf_sigma_y       | ~11%   | well-determined                      |
+| psf_sigma_x       | ~12%   | well-determined                      |
+| lipid_brightness  | ~17%   | well-determined                      |
+| spot_density      | ~17%   | well-determined                      |
+| enf               | ~21%   | moderate                             |
+| gain              | ~35%   | moderate / loose                     |
+| optical_bg_lipid  | ~83%   | poorly determined                    |
+| psf_theta         | ~560%  | degenerate (CV inflated; mean ≈ 0)   |
+
+**Conclusion:** the parameters governing detection and intensity — PSF widths,
+`lipid_brightness`, `spot_density` — are robust to which 25-image subset is used
+(CV ≲ 17%). The noise-decomposition parameters (`gain`, `enf`) and `psf_theta`
+are subset-sensitive or degenerate: `gain`/`enf` trade off (only their product is
+well constrained) and `psf_theta` is ill-defined for an essentially circular PSF
+(its values scatter around 0, inflating the CV). No repeats failed or stalled.

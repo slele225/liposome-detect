@@ -65,15 +65,38 @@ Outputs land in `runs/<sample_name>/` (per-sample calibration results, plots,
 `trials.csv`, `convergence.png`), plus `results.json`, `aggregated_params.csv`,
 `run_manifest.json`, and `figures/`.
 
-> **VM note (case-sensitive filesystem):** the config uses standardized
-> `images/` and `dark_frames/` subfolders. If the endophilin datasets are on
-> disk as `Images/` / `Dark_frames/`, rename them to lowercase on the VM (Linux
-> is case-sensitive) or the loader will not find them.
+**Re-run only the analysis** on existing `runs/` (no recalibration):
+`python experiments/2026-06-03_per-sample-calibration/analyze.py` — it rebuilds
+`results.json`/`aggregated_params.csv` from the per-run
+`runs/<id>/calibration_results.json` if missing, then redraws the figures. To
+force a rebuild without plotting:
+`python -m src.calibration.study --aggregate-only experiments/2026-06-03_per-sample-calibration`.
+
+> **Folder names:** the config uses standardized `images/` and `dark_frames/`
+> subfolders, and `src/simulator/io.py` now resolves case- and
+> space/underscore variants (`Images`, `Dark_frames`, `dark frames`) tolerantly,
+> so a stray variant on a case-sensitive filesystem is auto-resolved (and logged)
+> rather than failing.
 
 ## Findings
 
-> **TODO: fill after the VM run.** (Studies are not run during scaffolding.)
-> Summarize: which params are stable vs setting-dependent; whether fitted gain
-> tracks 561 voltage (and the sign/strength of the relationship); any sample
-> that calibrated poorly (check its `convergence.png` and validation
-> discrepancy).
+Each sample was calibrated independently (200 trials, default weights). See
+`figures/cross_sample_params.csv`, `figures/gain_vs_voltage.png` and
+`figures/params_across_samples.png`.
+
+- **Fitted gain does NOT cleanly track the 561 detector voltage.** It sits in a
+  narrow band ~11–22 ADU/photon (50nM_EGFP 10.7, 300nM_EGFP 13.5, 100nM_EGFP
+  14.5, 300nM_endophilin 18.5, 25nM_endophilin 19.2, 20nM_EGFP 21.7) with no
+  monotonic relationship to voltage — e.g. 50nM_EGFP at 640 V has the *lowest*
+  fitted gain. The whole band is ~15–40× below the photon-transfer **measured**
+  gain (~270–450). **Conclusion: gain is not independently identifiable** from
+  the lipid moment-matching objective (it trades off against enf/brightness) and
+  must not be read as a physical gain measurement.
+- **Setting-dependent, as expected:** `lipid_brightness` (EGFP ~4.8–8.4k vs
+  endophilin ~12–17k), `spot_density` (~490–834) and the PSF widths
+  (`psf_sigma_x` ~1.6–2.3, `psf_sigma_y` ~1.5–2.6) vary sample to sample.
+- **Weakly constrained:** `psf_theta` spans nearly the full ±45° prior
+  (near-circular PSFs make it ill-defined); `optical_bg_lipid` is small for every
+  sample (~0.3–2.2 photons).
+- All six samples converged with low training/validation discrepancy and no
+  failures (see `run_manifest.json` and each run's `convergence.png`).

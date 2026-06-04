@@ -11,5 +11,5 @@ seed: 0
 samples:
   - name: 20nM_EGFP
     image_dir: data/20nM_EGFP/images
-    dark_dir: data/20nM_EGFP/dark frames
+    dark_dir: data/20nM_EGFP/dark_frames
     dls_path: data/20nM_EGFP/batch1_dls_corrected.xlsx

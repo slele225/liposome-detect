@@ -66,9 +66,34 @@ Outputs land in `runs/equal/`, `runs/up_pixel_hist/`, `runs/up_psd/`,
 `trials.csv`, `convergence.png`), plus `results.json`, `aggregated_params.csv`,
 `run_manifest.json`, and `figures/`.
 
+**Re-run only the analysis** on existing `runs/` (no recalibration):
+`python experiments/2026-06-03_weight-sweep-endophilin/analyze.py` — it rebuilds
+`results.json` from the 5 per-config `calibration_results.json` if missing, then
+redraws the figures. Force a rebuild with
+`python -m src.calibration.study --aggregate-only experiments/2026-06-03_weight-sweep-endophilin`.
+
 ## Findings
 
-> **TODO: fill after the VM run.** (Studies are not run during scaffolding.)
-> Report the across-config CV for each parameter. State the conclusion in terms
-> of parameter spread only (NOT loss): which parameters are stable across
-> weightings (weighting irrelevant) and which move (that term's weight matters).
+The five configs (`equal` + each term up-weighted 10×) were each calibrated once
+on 25nM_endophilin. Compared **only by parameter spread, not loss** (the loss is
+on a different scale per config). Across-config CV
+(`figures/param_spread_across_configs.csv`, `figures/params_across_configs.png`):
+
+| parameter         | CV across configs | verdict        |
+|-------------------|-------------------|----------------|
+| psf_sigma_y       | ~7%               | stable         |
+| lipid_brightness  | ~7%               | stable         |
+| psf_sigma_x       | ~8%               | stable         |
+| spot_density      | ~9%               | stable         |
+| enf               | ~15%              | mostly stable  |
+| optical_bg_lipid  | ~56%              | wanders        |
+| gain              | ~85%              | wanders        |
+| psf_theta         | ~215%             | wanders        |
+
+**Conclusion:** the calibration is **insensitive to objective weighting**. The
+well-determined parameters (`lipid_brightness`, PSF widths, `spot_density`) move
+only ~7–9% across very different weightings, while the parameters that wander
+(`gain`, `optical_bg_lipid`, `psf_theta`) are exactly the ones the bootstrap
+study found degenerate — their movement reflects their own non-identifiability,
+not a real effect of the weighting. **Equal weights are fine**; there is no need
+to tune the discrepancy weights.

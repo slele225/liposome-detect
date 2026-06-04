@@ -129,8 +129,53 @@ def load_tiff_stack(path):
     raise ValueError(f"Unexpected TIFF shape: {img.shape}")
 
 
+def _norm_name(name):
+    """Normalize a folder name for tolerant matching: lowercase, spaces->'_'."""
+    return name.lower().replace(' ', '_')
+
+
+def _resolve_dir(path):
+    """Return ``path`` if it is a directory, else a tolerant variant of it.
+
+    Data folders have been standardized to lowercase ``images`` / ``dark_frames``,
+    but older configs (and case-sensitive filesystems) may still reference
+    ``Images``, ``dark frames`` or ``Dark_frames``. When the exact ``path`` does
+    not exist, look in its parent directory for a single entry whose name matches
+    case-insensitively and ignoring spaces-vs-underscores, and return that
+    (logging the resolution). If zero or more than one entry matches, return
+    ``path`` unchanged so the caller raises a clear error.
+    """
+    if os.path.isdir(path):
+        return path
+    cleaned = path.rstrip('/\\')
+    parent = os.path.dirname(cleaned) or '.'
+    base = os.path.basename(cleaned)
+    if not base or not os.path.isdir(parent):
+        return path
+    target = _norm_name(base)
+    matches = [e for e in os.listdir(parent)
+               if _norm_name(e) == target
+               and os.path.isdir(os.path.join(parent, e))]
+    if len(matches) == 1:
+        resolved = os.path.join(parent, matches[0])
+        print(f"  resolved directory: '{path}' -> '{resolved}'")
+        return resolved
+    if len(matches) > 1:
+        print(f"  warning: ambiguous directory '{path}'; candidates {matches}; "
+              f"using the exact path as given.")
+    return path
+
+
 def load_all_images(image_dir, pattern="*.tif*"):
-    """Load all TIFF images from a directory."""
+    """Load all TIFF images from a directory.
+
+    ``image_dir`` is resolved tolerantly (see ``_resolve_dir``): if the exact
+    path is missing, a case-insensitive / space-vs-underscore variant in the
+    parent directory is used instead (e.g. ``Images`` or ``dark frames``). This
+    function is the single entry point for both sample images and dark frames
+    (``analyze_dark_frames`` calls it), so both get the same tolerance.
+    """
+    image_dir = _resolve_dir(image_dir)
     paths = sorted(glob.glob(os.path.join(image_dir, pattern)))
     if not paths:
         raise FileNotFoundError(f"No TIFF files found in {image_dir} with pattern {pattern}")

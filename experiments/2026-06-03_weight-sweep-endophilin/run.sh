@@ -6,14 +6,17 @@
 #   N_WORKERS=32 ./run.sh         # via env var, OR
 #   ./run.sh                      # default = os.cpu_count()
 #
-# Override the interpreter with PYTHON=... (e.g. PYTHON="uv run python").
+# Interpreter resolved by scripts/_resolve_python.sh ($PYTHON if set, else
+# `uv run python`, else python3/python). Set DRY_RUN=1 to echo the commands only.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$REPO_ROOT"
 
-PYTHON="${PYTHON:-python}"
+# Resolve $PYTHON + run_py() (works with or without the venv activated).
+source "$REPO_ROOT/scripts/_resolve_python.sh"
+
 CONFIG="experiments/2026-06-03_weight-sweep-endophilin/config_snapshot/study.yaml"
 ANALYZE="experiments/2026-06-03_weight-sweep-endophilin/analyze.py"
 
@@ -27,11 +30,11 @@ echo "[exp1] n_workers : ${NW:-default(os.cpu_count())}"
 echo "=================================================================="
 
 if [ -n "$NW" ]; then
-  "$PYTHON" -m src.calibration.study --config "$CONFIG" --n-workers "$NW"
+  run_py -m src.calibration.study --config "$CONFIG" --n-workers "$NW"
 else
-  "$PYTHON" -m src.calibration.study --config "$CONFIG"
+  run_py -m src.calibration.study --config "$CONFIG"
 fi
 
 echo "[exp1] calibrations done — running analysis ..."
-"$PYTHON" "$ANALYZE"
+run_py "$ANALYZE"
 echo "[exp1] complete."

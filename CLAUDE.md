@@ -125,6 +125,9 @@ runs many independent calibrations and aggregates them = an **experiment**.
 - Design rationale (per-sample not joint, bootstrap d/repeats, weight-sweep
   compared by parameter spread not loss, single-threaded-per-worker): see
   [docs/decisions/2026-06-03_calibration-study-design.md](docs/decisions/2026-06-03_calibration-study-design.md).
+  Results / what the runs showed (identifiable vs degenerate params; trust
+  PSF/brightness/spot_density, treat gain/enf as a degenerate pair): see
+  [docs/decisions/2026-06-03_calibration-findings.md](docs/decisions/2026-06-03_calibration-findings.md).
 
 ## Running
 

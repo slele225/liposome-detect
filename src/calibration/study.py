@@ -233,9 +233,14 @@ def build_jobs(study_config):
 # --------------------------------------------------------------------------- #
 # Aggregation                                                                 #
 # --------------------------------------------------------------------------- #
-def _write_aggregates(records, study_config):
-    """Write results.json, aggregated_params.csv and run_manifest.json."""
-    exp_dir = Path(study_config['output_dir'])
+def _write_aggregates(records, exp_dir, write_manifest=True):
+    """Write results.json + aggregated_params.csv (and optionally run_manifest).
+
+    ``exp_dir`` is the experiment folder. ``write_manifest`` is False when
+    re-aggregating from disk (the per-worker diagnostics can't be reconstructed,
+    so the original run_manifest.json is left untouched).
+    """
+    exp_dir = Path(exp_dir)
     exp_dir.mkdir(parents=True, exist_ok=True)
 
     # results.json: the canonical aggregated parameter table.
@@ -252,18 +257,71 @@ def _write_aggregates(records, study_config):
                     'duration_sec', 'pid'])
         for r in records:
             fp = r['fitted_params'] or {}
+            dur = r.get('duration_sec')
             w.writerow([
                 r['run_id'], r['status'],
                 *[fp.get(k, '') for k in FITTED_PARAM_KEYS],
                 r['training_discrepancy'] if r['training_discrepancy'] is not None else '',
                 r['validation_discrepancy'] if r['validation_discrepancy'] is not None else '',
-                round(r.get('duration_sec', 0.0), 2), r.get('pid', ''),
+                '' if dur is None else round(dur, 2),
+                r.get('pid') if r.get('pid') is not None else '',
             ])
 
-    # Full manifest with worker diagnostics (supports the parallel/threads check).
-    (exp_dir / 'run_manifest.json').write_text(json.dumps(records, indent=2))
-    print(f"[study] wrote results.json, aggregated_params.csv, "
-          f"run_manifest.json to {exp_dir}")
+    if write_manifest:
+        # Full manifest with worker diagnostics (supports the parallel/threads check).
+        (exp_dir / 'run_manifest.json').write_text(json.dumps(records, indent=2))
+    msg = "results.json, aggregated_params.csv"
+    if write_manifest:
+        msg += ", run_manifest.json"
+    print(f"[study] wrote {msg} to {exp_dir}")
+
+
+def _record_from_results_dir(run_dir):
+    """Build a run record from an existing ``runs/<run_id>/`` folder.
+
+    Used by :func:`aggregate_from_runs` (no calibration). Run-diagnostic fields
+    (pid / threads / duration) are not recoverable from disk and are None.
+    """
+    run_dir = Path(run_dir)
+    rec = {
+        'run_id': run_dir.name, 'status': 'failed', 'pid': None,
+        'omp_num_threads': None, 'mkl_num_threads': None,
+        'openblas_num_threads': None, 'duration_sec': None,
+        'fitted_params': None, 'training_discrepancy': None,
+        'validation_discrepancy': None, 'measured_gain': None, 'error': None,
+    }
+    try:
+        results = _read_results(run_dir)
+        rec['fitted_params'] = _fitted_params_from_results(results)
+        rec['training_discrepancy'] = results.get('training_discrepancy')
+        rec['validation_discrepancy'] = results.get('validation_discrepancy')
+        rec['measured_gain'] = results.get('measured_params', {}).get('gain')
+        rec['status'] = 'ok'
+    except Exception as e:
+        rec['error'] = f'{type(e).__name__}: {e}'
+    return rec
+
+
+def aggregate_from_runs(exp_dir):
+    """Re-aggregate results.json + aggregated_params.csv from existing
+    ``runs/<run_id>/calibration_results.json`` WITHOUT recalibrating.
+
+    Lets the analysis be re-run (or a plot fixed) on existing outputs without
+    redoing the calibrations. run_manifest.json is left untouched (its
+    per-worker diagnostics can't be reconstructed from disk). Returns the
+    rebuilt records.
+    """
+    exp_dir = Path(exp_dir)
+    runs_dir = exp_dir / 'runs'
+    run_dirs = sorted(d for d in runs_dir.glob('*') if d.is_dir())
+    if not run_dirs:
+        raise FileNotFoundError(
+            f"No runs/<run_id>/ subdirectories under {runs_dir} to aggregate.")
+    records = [_record_from_results_dir(d) for d in run_dirs]
+    _write_aggregates(records, exp_dir, write_manifest=False)
+    n_ok = sum(r['status'] == 'ok' for r in records)
+    print(f"[study] re-aggregated {n_ok}/{len(records)} runs from {runs_dir}")
+    return records
 
 
 # --------------------------------------------------------------------------- #
@@ -318,7 +376,7 @@ def run_study(study_config, n_workers=None):
                 records.append(rec)
 
     records.sort(key=lambda r: order.get(r['run_id'], 1 << 30))
-    _write_aggregates(records, study_config)
+    _write_aggregates(records, exp_dir)
 
     n_ok = sum(r['status'] == 'ok' for r in records)
     n_fail = len(records) - n_ok
@@ -347,11 +405,25 @@ def main():
     parser = argparse.ArgumentParser(
         description='Parallel calibration-study runner (per_sample / bootstrap '
                     '/ weight_sweep).')
-    parser.add_argument('--config', required=True,
-                        help='Path to a study YAML config.')
+    parser.add_argument('--config',
+                        help='Path to a study YAML config (required unless '
+                             '--aggregate-only is given).')
     parser.add_argument('--n-workers', type=int, default=None,
                         help='Worker processes (default: os.cpu_count()).')
+    parser.add_argument('--aggregate-only', metavar='EXP_DIR', default=None,
+                        help='Skip calibration entirely; re-aggregate '
+                             'results.json + aggregated_params.csv from an '
+                             "experiment folder's existing runs/. Use to "
+                             're-aggregate or fix a plot without recalibrating.')
     args = parser.parse_args()
+
+    # Re-aggregate-only mode: no study, no calibration.
+    if args.aggregate_only:
+        aggregate_from_runs(args.aggregate_only)
+        return
+
+    if not args.config:
+        parser.error('--config is required unless --aggregate-only is given.')
 
     with open(args.config) as f:
         study_config = yaml.safe_load(f)
