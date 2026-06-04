@@ -12,7 +12,7 @@
 # Run: experiments/2026-06-03_weight-sweep-endophilin/run.sh [n_workers]
 mode: weight_sweep
 output_dir: experiments/2026-06-03_weight-sweep-endophilin
-n_trials: 200
+n_trials: 400
 n_sim_per_trial: 30
 val_fraction: 0.2
 seed: 0

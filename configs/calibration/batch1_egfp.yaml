@@ -1,7 +1,7 @@
 # Calibration config: 20 nM His-mEGFP on 25% DOPS 100 nm extruded LUVs.
 # Output goes to calibrations/batch1_egfp/.
 image_dir: data/20nM_EGFP/images
-dark_dir: data/20nM_EGFP/dark frames
+dark_dir: data/20nM_EGFP/dark_frames
 dls_path: data/20nM_EGFP/batch1_dls_corrected.xlsx
 output_dir: calibrations/batch1_egfp
 image_pattern: '*.tif*'

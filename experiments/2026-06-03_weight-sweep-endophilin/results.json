@@ -1,0 +1,72 @@
+[
+  {
+    "run_id": "equal",
+    "fitted_params": {
+      "lipid_brightness": 13326.022164996004,
+      "psf_sigma_x": 1.9061562962836855,
+      "psf_sigma_y": 2.514383381735591,
+      "psf_theta": 16.95241356944264,
+      "gain": 5.516650186183261,
+      "enf": 1.5698914660105177,
+      "optical_bg_lipid": 5.4179495605083625,
+      "spot_density": 680.4760944554848
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "up_pixel_hist",
+    "fitted_params": {
+      "lipid_brightness": 13682.220441019062,
+      "psf_sigma_x": 2.1149376627991208,
+      "psf_sigma_y": 2.5587551460860203,
+      "psf_theta": -19.897891020326618,
+      "gain": 2.855883512091822,
+      "enf": 2.363953862741708,
+      "optical_bg_lipid": 6.753833177592467,
+      "spot_density": 678.5596456070461
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "up_psd",
+    "fitted_params": {
+      "lipid_brightness": 14610.58166780822,
+      "psf_sigma_x": 2.2582757988918414,
+      "psf_sigma_y": 2.1730277644203424,
+      "psf_theta": -44.99091955646834,
+      "gain": 2.8508992539103057,
+      "enf": 1.9879978762105361,
+      "optical_bg_lipid": 12.818085742812658,
+      "spot_density": 619.4810816437504
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "up_quantiles",
+    "fitted_params": {
+      "lipid_brightness": 12814.565179663976,
+      "psf_sigma_x": 2.0709348936031113,
+      "psf_sigma_y": 2.2563059316602807,
+      "psf_theta": -30.8178379934532,
+      "gain": 12.485620694976872,
+      "enf": 2.284627704556148,
+      "optical_bg_lipid": 2.0334830612257266,
+      "spot_density": 716.0615536091389
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "up_skewness",
+    "fitted_params": {
+      "lipid_brightness": 12082.384931311328,
+      "psf_sigma_x": 2.308615124102967,
+      "psf_sigma_y": 2.2597724314527707,
+      "psf_theta": 14.619152120149138,
+      "gain": 1.865946721725667,
+      "enf": 2.2145882931018264,
+      "optical_bg_lipid": 8.063107475821004,
+      "spot_density": 795.5646472157783
+    },
+    "status": "ok"
+  }
+]

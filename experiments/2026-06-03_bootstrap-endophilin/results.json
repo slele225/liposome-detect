@@ -1,0 +1,1402 @@
+[
+  {
+    "run_id": "repeat_000",
+    "fitted_params": {
+      "lipid_brightness": 14821.821827432808,
+      "psf_sigma_x": 1.876478587614221,
+      "psf_sigma_y": 2.2846345222829525,
+      "psf_theta": -13.0390326884758,
+      "gain": 20.029969245676174,
+      "enf": 2.345015270340255,
+      "optical_bg_lipid": 1.9045515699284588,
+      "spot_density": 568.9662136071134
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_001",
+    "fitted_params": {
+      "lipid_brightness": 14295.09966944801,
+      "psf_sigma_x": 2.3711016248311947,
+      "psf_sigma_y": 1.8870552846038233,
+      "psf_theta": -31.64430376482686,
+      "gain": 19.081147360541976,
+      "enf": 1.6276304675461715,
+      "optical_bg_lipid": 1.961772446646059,
+      "spot_density": 651.2069725593473
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_002",
+    "fitted_params": {
+      "lipid_brightness": 17125.673481180318,
+      "psf_sigma_x": 2.067376051707916,
+      "psf_sigma_y": 2.55100554025021,
+      "psf_theta": -18.85909952995399,
+      "gain": 30.624252750178524,
+      "enf": 1.9214650814825653,
+      "optical_bg_lipid": 1.1780070999917056,
+      "spot_density": 528.8023614709746
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_003",
+    "fitted_params": {
+      "lipid_brightness": 16222.84106492215,
+      "psf_sigma_x": 1.8011148824268501,
+      "psf_sigma_y": 2.6719380547204006,
+      "psf_theta": -15.457209738422186,
+      "gain": 27.839788563423813,
+      "enf": 1.6044894281385875,
+      "optical_bg_lipid": 1.1832033463078189,
+      "spot_density": 593.5986605231116
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_004",
+    "fitted_params": {
+      "lipid_brightness": 12475.283675242137,
+      "psf_sigma_x": 1.6940796950800048,
+      "psf_sigma_y": 2.4523074610040547,
+      "psf_theta": 41.55991885591715,
+      "gain": 16.87369420952082,
+      "enf": 2.3392610520802477,
+      "optical_bg_lipid": 1.435672255612596,
+      "spot_density": 683.0680470991836
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_005",
+    "fitted_params": {
+      "lipid_brightness": 12757.064795078935,
+      "psf_sigma_x": 1.7356937586177112,
+      "psf_sigma_y": 2.3604608351435665,
+      "psf_theta": -34.558932687284575,
+      "gain": 17.77670474652841,
+      "enf": 2.0909092738672133,
+      "optical_bg_lipid": 1.5018761832275207,
+      "spot_density": 731.0267490515953
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_006",
+    "fitted_params": {
+      "lipid_brightness": 17480.781472643826,
+      "psf_sigma_x": 2.3733814434968066,
+      "psf_sigma_y": 2.079916185659939,
+      "psf_theta": 38.3721898517594,
+      "gain": 45.650393632365464,
+      "enf": 1.428508581281985,
+      "optical_bg_lipid": 0.8252838923088459,
+      "spot_density": 479.7212603807412
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_007",
+    "fitted_params": {
+      "lipid_brightness": 20517.297905101605,
+      "psf_sigma_x": 2.284524452257628,
+      "psf_sigma_y": 2.333424236452684,
+      "psf_theta": 33.45066822883076,
+      "gain": 16.37446731265262,
+      "enf": 2.3246713265764285,
+      "optical_bg_lipid": 2.1225744310673726,
+      "spot_density": 426.08024106989626
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_008",
+    "fitted_params": {
+      "lipid_brightness": 14893.060533744929,
+      "psf_sigma_x": 2.2825386094126268,
+      "psf_sigma_y": 2.137474323100504,
+      "psf_theta": -18.379533280255075,
+      "gain": 15.998115681554738,
+      "enf": 2.317428558072968,
+      "optical_bg_lipid": 2.0091092728325313,
+      "spot_density": 632.0817584443002
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_009",
+    "fitted_params": {
+      "lipid_brightness": 14854.387828317125,
+      "psf_sigma_x": 1.9307334010448316,
+      "psf_sigma_y": 2.3375319929126985,
+      "psf_theta": 35.805838784326994,
+      "gain": 28.906000320904084,
+      "enf": 1.9767546301362364,
+      "optical_bg_lipid": 1.162937090323489,
+      "spot_density": 627.8350327483055
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_010",
+    "fitted_params": {
+      "lipid_brightness": 14919.689471417538,
+      "psf_sigma_x": 1.702504388477736,
+      "psf_sigma_y": 2.654845705036371,
+      "psf_theta": -21.25779803553838,
+      "gain": 22.18686127367798,
+      "enf": 2.125647485341908,
+      "optical_bg_lipid": 1.6940544145010625,
+      "spot_density": 590.3220172102019
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_011",
+    "fitted_params": {
+      "lipid_brightness": 15770.582752148095,
+      "psf_sigma_x": 2.3215953352150165,
+      "psf_sigma_y": 1.9121628480290513,
+      "psf_theta": 32.733762882523756,
+      "gain": 31.29865830328724,
+      "enf": 1.3078212023935143,
+      "optical_bg_lipid": 1.1666160185789285,
+      "spot_density": 529.7653400702585
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_012",
+    "fitted_params": {
+      "lipid_brightness": 22265.93731330839,
+      "psf_sigma_x": 2.495125147514808,
+      "psf_sigma_y": 2.4297985390134116,
+      "psf_theta": 13.930739026374228,
+      "gain": 34.085103406965274,
+      "enf": 1.3956400157121573,
+      "optical_bg_lipid": 1.5667778482753079,
+      "spot_density": 397.3600289606079
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_013",
+    "fitted_params": {
+      "lipid_brightness": 12262.026676461694,
+      "psf_sigma_x": 1.9130239647124017,
+      "psf_sigma_y": 2.148447312951486,
+      "psf_theta": -17.65101621014154,
+      "gain": 14.703359866590757,
+      "enf": 2.4515974288680296,
+      "optical_bg_lipid": 2.2723708358400554,
+      "spot_density": 764.7062460526175
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_014",
+    "fitted_params": {
+      "lipid_brightness": 17923.59575123508,
+      "psf_sigma_x": 2.2274795685861113,
+      "psf_sigma_y": 2.296100091467271,
+      "psf_theta": -1.4359999476121224,
+      "gain": 16.927404327241376,
+      "enf": 2.407892617716885,
+      "optical_bg_lipid": 2.123670345262023,
+      "spot_density": 478.1988744551249
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_015",
+    "fitted_params": {
+      "lipid_brightness": 10797.704547503165,
+      "psf_sigma_x": 1.7637573203070245,
+      "psf_sigma_y": 2.015396689355463,
+      "psf_theta": 23.557187739106254,
+      "gain": 30.119292495370683,
+      "enf": 1.092425225452841,
+      "optical_bg_lipid": 1.2717297183173835,
+      "spot_density": 776.8639935384792
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_016",
+    "fitted_params": {
+      "lipid_brightness": 18392.117988466835,
+      "psf_sigma_x": 1.7969836558666867,
+      "psf_sigma_y": 2.6011415105716567,
+      "psf_theta": -14.003722926192303,
+      "gain": 18.24220767039434,
+      "enf": 2.2752912376850216,
+      "optical_bg_lipid": 2.272795468060202,
+      "spot_density": 447.01971143111246
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_017",
+    "fitted_params": {
+      "lipid_brightness": 18273.159660047226,
+      "psf_sigma_x": 2.051146956052307,
+      "psf_sigma_y": 2.266628901896597,
+      "psf_theta": 22.383095067648252,
+      "gain": 24.409828633960796,
+      "enf": 1.7973707976527087,
+      "optical_bg_lipid": 1.846849414643119,
+      "spot_density": 459.0769754967299
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_018",
+    "fitted_params": {
+      "lipid_brightness": 14525.46403894505,
+      "psf_sigma_x": 2.2026641011950234,
+      "psf_sigma_y": 1.9663953349665693,
+      "psf_theta": -24.95662226844275,
+      "gain": 29.68378292742605,
+      "enf": 1.7110595016342607,
+      "optical_bg_lipid": 1.154403559579904,
+      "spot_density": 633.9280173359526
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_019",
+    "fitted_params": {
+      "lipid_brightness": 21099.018204328266,
+      "psf_sigma_x": 2.4400521176954664,
+      "psf_sigma_y": 2.6942829291958654,
+      "psf_theta": -38.07334683144695,
+      "gain": 19.30484629233334,
+      "enf": 2.3800759981238917,
+      "optical_bg_lipid": 1.876412755396763,
+      "spot_density": 411.5496653360532
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_020",
+    "fitted_params": {
+      "lipid_brightness": 13985.991531661513,
+      "psf_sigma_x": 1.9718627259318122,
+      "psf_sigma_y": 1.8853896755669501,
+      "psf_theta": -24.773031407574173,
+      "gain": 16.946753564239586,
+      "enf": 1.8057259876619334,
+      "optical_bg_lipid": 2.423498669851049,
+      "spot_density": 710.2764401103318
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_021",
+    "fitted_params": {
+      "lipid_brightness": 12827.49855213144,
+      "psf_sigma_x": 1.6482961910974685,
+      "psf_sigma_y": 2.3855445231614096,
+      "psf_theta": -18.838430400158572,
+      "gain": 17.973856748714198,
+      "enf": 2.2372892149105335,
+      "optical_bg_lipid": 1.929234013117457,
+      "spot_density": 666.1348179888354
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_022",
+    "fitted_params": {
+      "lipid_brightness": 12582.707017873916,
+      "psf_sigma_x": 2.1470296807464275,
+      "psf_sigma_y": 1.8623411488504849,
+      "psf_theta": -36.6491786252049,
+      "gain": 22.7278273766263,
+      "enf": 1.9316132400739838,
+      "optical_bg_lipid": 1.609926719413684,
+      "spot_density": 713.9280627133231
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_023",
+    "fitted_params": {
+      "lipid_brightness": 12313.060980564129,
+      "psf_sigma_x": 1.7408090479161824,
+      "psf_sigma_y": 2.0474238077875673,
+      "psf_theta": 10.679412709943048,
+      "gain": 5.012102093897756,
+      "enf": 2.4105923860830316,
+      "optical_bg_lipid": 14.887730467081687,
+      "spot_density": 633.0588752356389
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_024",
+    "fitted_params": {
+      "lipid_brightness": 12599.36377079682,
+      "psf_sigma_x": 1.7402239479583435,
+      "psf_sigma_y": 2.5628944148915953,
+      "psf_theta": -35.24192220344557,
+      "gain": 15.907789816396578,
+      "enf": 1.795477436405078,
+      "optical_bg_lipid": 0.891150153233015,
+      "spot_density": 817.772024462504
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_025",
+    "fitted_params": {
+      "lipid_brightness": 16842.470005402756,
+      "psf_sigma_x": 2.3673246052763024,
+      "psf_sigma_y": 2.0148198052805184,
+      "psf_theta": 13.849137196725732,
+      "gain": 21.973913244413232,
+      "enf": 1.905102750966768,
+      "optical_bg_lipid": 1.8794437970984665,
+      "spot_density": 489.58674164413037
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_026",
+    "fitted_params": {
+      "lipid_brightness": 14363.414042795162,
+      "psf_sigma_x": 1.8384604293421043,
+      "psf_sigma_y": 2.3943784428336725,
+      "psf_theta": -40.41210042716249,
+      "gain": 15.80843117652288,
+      "enf": 2.28098977208218,
+      "optical_bg_lipid": 1.8447564873825193,
+      "spot_density": 638.1507226410498
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_027",
+    "fitted_params": {
+      "lipid_brightness": 15988.381051916102,
+      "psf_sigma_x": 1.9215958158381827,
+      "psf_sigma_y": 2.4273960052407704,
+      "psf_theta": -21.549166888531353,
+      "gain": 24.701215840779373,
+      "enf": 1.491510705894802,
+      "optical_bg_lipid": 1.9107029278320784,
+      "spot_density": 543.8191186032589
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_028",
+    "fitted_params": {
+      "lipid_brightness": 12698.685328324056,
+      "psf_sigma_x": 1.8383668337083094,
+      "psf_sigma_y": 2.2021742007709912,
+      "psf_theta": 44.46295280949956,
+      "gain": 23.145345171917075,
+      "enf": 1.9278959015814796,
+      "optical_bg_lipid": 1.3843955457929609,
+      "spot_density": 761.7579955605966
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_029",
+    "fitted_params": {
+      "lipid_brightness": 15809.16043891403,
+      "psf_sigma_x": 2.157673975368478,
+      "psf_sigma_y": 2.160247745141088,
+      "psf_theta": -43.33760631984559,
+      "gain": 22.172379354125713,
+      "enf": 2.2034486015357437,
+      "optical_bg_lipid": 1.8769202802591793,
+      "spot_density": 506.4767510436451
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_030",
+    "fitted_params": {
+      "lipid_brightness": 12135.866554260121,
+      "psf_sigma_x": 1.716425328495511,
+      "psf_sigma_y": 2.3170539896221465,
+      "psf_theta": -40.84924340440342,
+      "gain": 23.330974946054436,
+      "enf": 2.1003227216151736,
+      "optical_bg_lipid": 1.3310878719541441,
+      "spot_density": 760.5124675239034
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_031",
+    "fitted_params": {
+      "lipid_brightness": 11650.238538923311,
+      "psf_sigma_x": 1.7552967611416819,
+      "psf_sigma_y": 1.912697645693236,
+      "psf_theta": -39.47418185732231,
+      "gain": 30.652785308976966,
+      "enf": 1.2647173341109688,
+      "optical_bg_lipid": 1.0462747605150777,
+      "spot_density": 740.2984905865098
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_032",
+    "fitted_params": {
+      "lipid_brightness": 12050.245262783186,
+      "psf_sigma_x": 1.6496844179334667,
+      "psf_sigma_y": 2.370606823453818,
+      "psf_theta": -39.740836003187795,
+      "gain": 44.318459304187954,
+      "enf": 1.220120206995275,
+      "optical_bg_lipid": 0.6764509306575053,
+      "spot_density": 737.5046176839562
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_033",
+    "fitted_params": {
+      "lipid_brightness": 16682.67565448387,
+      "psf_sigma_x": 1.9268732737470664,
+      "psf_sigma_y": 2.5993903617244793,
+      "psf_theta": 37.17512187970741,
+      "gain": 17.565481431178227,
+      "enf": 2.031684751759786,
+      "optical_bg_lipid": 2.1340894982285654,
+      "spot_density": 532.7653597725159
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_034",
+    "fitted_params": {
+      "lipid_brightness": 16064.135553236414,
+      "psf_sigma_x": 1.847114261346397,
+      "psf_sigma_y": 2.271310259506633,
+      "psf_theta": 0.7596861324574826,
+      "gain": 13.569930789232648,
+      "enf": 2.2750908231852076,
+      "optical_bg_lipid": 4.228978363202963,
+      "spot_density": 501.7023094472299
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_035",
+    "fitted_params": {
+      "lipid_brightness": 13188.965028465691,
+      "psf_sigma_x": 1.9704305499642998,
+      "psf_sigma_y": 1.9159438725276856,
+      "psf_theta": 15.964344290417642,
+      "gain": 34.51380973229126,
+      "enf": 1.2060335868935217,
+      "optical_bg_lipid": 1.2774195972305808,
+      "spot_density": 671.3829967889336
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_036",
+    "fitted_params": {
+      "lipid_brightness": 17402.853086981726,
+      "psf_sigma_x": 2.3956538533725107,
+      "psf_sigma_y": 2.0314153854464796,
+      "psf_theta": -37.19961134086,
+      "gain": 22.117660457321346,
+      "enf": 2.163214342290479,
+      "optical_bg_lipid": 1.9026817144499732,
+      "spot_density": 441.6194121124124
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_037",
+    "fitted_params": {
+      "lipid_brightness": 13034.592360015211,
+      "psf_sigma_x": 1.9096646475237424,
+      "psf_sigma_y": 1.924968435799442,
+      "psf_theta": 7.479271843552166,
+      "gain": 22.51142752611998,
+      "enf": 2.1826097716641306,
+      "optical_bg_lipid": 1.7175012274616013,
+      "spot_density": 638.8463300790858
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_038",
+    "fitted_params": {
+      "lipid_brightness": 15829.078836084322,
+      "psf_sigma_x": 2.4234936035018246,
+      "psf_sigma_y": 1.9862480199251509,
+      "psf_theta": 31.994199339346913,
+      "gain": 34.675000323949796,
+      "enf": 1.6015158808877896,
+      "optical_bg_lipid": 1.1111858377544004,
+      "spot_density": 556.1919050393674
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_039",
+    "fitted_params": {
+      "lipid_brightness": 15176.61610479567,
+      "psf_sigma_x": 1.7907722010038774,
+      "psf_sigma_y": 2.2665259436540786,
+      "psf_theta": -37.762048987728704,
+      "gain": 18.728133073817133,
+      "enf": 2.4403806151801137,
+      "optical_bg_lipid": 2.156434583912995,
+      "spot_density": 597.5850020394986
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_040",
+    "fitted_params": {
+      "lipid_brightness": 17114.472786498285,
+      "psf_sigma_x": 1.8502277766493886,
+      "psf_sigma_y": 2.731416349110883,
+      "psf_theta": 22.132768852650166,
+      "gain": 39.36112871831507,
+      "enf": 1.65778855145191,
+      "optical_bg_lipid": 1.02622944599663,
+      "spot_density": 534.5571982910955
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_041",
+    "fitted_params": {
+      "lipid_brightness": 12810.862777319708,
+      "psf_sigma_x": 1.7321120597208952,
+      "psf_sigma_y": 2.305313505707155,
+      "psf_theta": -32.16315589859491,
+      "gain": 26.430782320200716,
+      "enf": 1.3246876974529551,
+      "optical_bg_lipid": 1.3093411999121545,
+      "spot_density": 701.7256714342915
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_042",
+    "fitted_params": {
+      "lipid_brightness": 11133.584226503992,
+      "psf_sigma_x": 1.9085229329903861,
+      "psf_sigma_y": 1.9671681669930985,
+      "psf_theta": 18.440987554212953,
+      "gain": 16.661849094420536,
+      "enf": 1.7424704922995544,
+      "optical_bg_lipid": 1.9226752853115852,
+      "spot_density": 787.5754934041544
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_043",
+    "fitted_params": {
+      "lipid_brightness": 14497.259716419458,
+      "psf_sigma_x": 2.079217478449208,
+      "psf_sigma_y": 2.1189258581898858,
+      "psf_theta": 10.23385828819748,
+      "gain": 27.62475924225759,
+      "enf": 1.7499725186672908,
+      "optical_bg_lipid": 1.4240146111727034,
+      "spot_density": 578.1828738655497
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_044",
+    "fitted_params": {
+      "lipid_brightness": 11668.072458991666,
+      "psf_sigma_x": 1.815557778397495,
+      "psf_sigma_y": 2.2094171824145934,
+      "psf_theta": -18.313054942745815,
+      "gain": 18.64141606949146,
+      "enf": 2.065885121457795,
+      "optical_bg_lipid": 1.918032107587933,
+      "spot_density": 729.2508479933762
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_045",
+    "fitted_params": {
+      "lipid_brightness": 13244.619605788925,
+      "psf_sigma_x": 2.281943917329379,
+      "psf_sigma_y": 1.9071538492302171,
+      "psf_theta": -42.569157154108744,
+      "gain": 27.491985359518587,
+      "enf": 1.5271628854155552,
+      "optical_bg_lipid": 1.0523473536596728,
+      "spot_density": 719.6841541946555
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_046",
+    "fitted_params": {
+      "lipid_brightness": 14329.329883871313,
+      "psf_sigma_x": 2.2611959145894422,
+      "psf_sigma_y": 1.8682347788302054,
+      "psf_theta": -39.073286171637676,
+      "gain": 31.25485626286413,
+      "enf": 2.0368494684023712,
+      "optical_bg_lipid": 1.3906938880016795,
+      "spot_density": 602.5571309379422
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_047",
+    "fitted_params": {
+      "lipid_brightness": 16160.988076087982,
+      "psf_sigma_x": 2.1956801679625317,
+      "psf_sigma_y": 1.9725622475134412,
+      "psf_theta": -27.862833198247955,
+      "gain": 18.903635806515762,
+      "enf": 2.128061388713299,
+      "optical_bg_lipid": 2.030771331780241,
+      "spot_density": 553.8160123569008
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_048",
+    "fitted_params": {
+      "lipid_brightness": 14764.188076552258,
+      "psf_sigma_x": 2.037500477521653,
+      "psf_sigma_y": 2.0914047126216517,
+      "psf_theta": 30.58206961409715,
+      "gain": 12.730107401606869,
+      "enf": 2.340006252339935,
+      "optical_bg_lipid": 2.4824866620830703,
+      "spot_density": 598.1825778374728
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_049",
+    "fitted_params": {
+      "lipid_brightness": 11952.540390443677,
+      "psf_sigma_x": 1.7317028933672234,
+      "psf_sigma_y": 1.8811427025003853,
+      "psf_theta": -36.98148636897943,
+      "gain": 19.513929739469596,
+      "enf": 1.7289148892711583,
+      "optical_bg_lipid": 1.959806546320257,
+      "spot_density": 779.415592796819
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_050",
+    "fitted_params": {
+      "lipid_brightness": 14345.908531130914,
+      "psf_sigma_x": 2.3256325505045705,
+      "psf_sigma_y": 1.828577397426284,
+      "psf_theta": 23.107080662241643,
+      "gain": 30.639492571821922,
+      "enf": 1.266202006426236,
+      "optical_bg_lipid": 1.3240615703685876,
+      "spot_density": 596.5206450007427
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_051",
+    "fitted_params": {
+      "lipid_brightness": 14670.597874784778,
+      "psf_sigma_x": 1.7281617791439825,
+      "psf_sigma_y": 2.586129990913672,
+      "psf_theta": 3.938122643186178,
+      "gain": 30.767534775008745,
+      "enf": 1.787264577352323,
+      "optical_bg_lipid": 1.2743634420949195,
+      "spot_density": 563.3168740648402
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_052",
+    "fitted_params": {
+      "lipid_brightness": 14870.573419724587,
+      "psf_sigma_x": 1.7036701138612613,
+      "psf_sigma_y": 2.6493634712909158,
+      "psf_theta": -2.314241812195574,
+      "gain": 14.955798927735152,
+      "enf": 2.454580559451145,
+      "optical_bg_lipid": 2.5420057092252883,
+      "spot_density": 604.4723919989628
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_053",
+    "fitted_params": {
+      "lipid_brightness": 12005.876169159526,
+      "psf_sigma_x": 1.8521787877404532,
+      "psf_sigma_y": 2.045487013512714,
+      "psf_theta": 39.111169271680836,
+      "gain": 16.264195540967513,
+      "enf": 2.4480668995620167,
+      "optical_bg_lipid": 2.395387542526933,
+      "spot_density": 777.4256669903695
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_054",
+    "fitted_params": {
+      "lipid_brightness": 14766.888771025018,
+      "psf_sigma_x": 1.677061565495039,
+      "psf_sigma_y": 2.4483703400151278,
+      "psf_theta": 12.221737737090713,
+      "gain": 21.76215375537649,
+      "enf": 1.6233461013117345,
+      "optical_bg_lipid": 1.8054943641053884,
+      "spot_density": 565.1583404122621
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_055",
+    "fitted_params": {
+      "lipid_brightness": 14837.364156939762,
+      "psf_sigma_x": 2.036638100924529,
+      "psf_sigma_y": 2.2215510114290367,
+      "psf_theta": 35.76906379128331,
+      "gain": 16.71488818399772,
+      "enf": 2.1345719697552257,
+      "optical_bg_lipid": 2.2849726858019177,
+      "spot_density": 604.5239431176425
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_056",
+    "fitted_params": {
+      "lipid_brightness": 13653.742476159623,
+      "psf_sigma_x": 1.997501512213573,
+      "psf_sigma_y": 1.875431340310664,
+      "psf_theta": -4.1504320356323205,
+      "gain": 7.433881921323257,
+      "enf": 2.4973643454867,
+      "optical_bg_lipid": 6.663965987321943,
+      "spot_density": 565.1552414930582
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_057",
+    "fitted_params": {
+      "lipid_brightness": 14260.00747190487,
+      "psf_sigma_x": 2.36767783149482,
+      "psf_sigma_y": 2.005636672363133,
+      "psf_theta": -15.677848059337446,
+      "gain": 21.984511661760944,
+      "enf": 2.0993954021064742,
+      "optical_bg_lipid": 1.358135977129939,
+      "spot_density": 654.753204035774
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_058",
+    "fitted_params": {
+      "lipid_brightness": 12223.97389578761,
+      "psf_sigma_x": 2.1263253858394737,
+      "psf_sigma_y": 1.9269401674105586,
+      "psf_theta": 11.89426400672086,
+      "gain": 17.256652676581574,
+      "enf": 2.313629612156193,
+      "optical_bg_lipid": 1.56355920778735,
+      "spot_density": 755.3389841097355
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_059",
+    "fitted_params": {
+      "lipid_brightness": 13398.30535169443,
+      "psf_sigma_x": 2.0442920026407507,
+      "psf_sigma_y": 1.9962684789512686,
+      "psf_theta": -10.69507867578177,
+      "gain": 14.614752794806641,
+      "enf": 2.3058485951093535,
+      "optical_bg_lipid": 2.9419525507823208,
+      "spot_density": 626.5524484628703
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_060",
+    "fitted_params": {
+      "lipid_brightness": 18233.774679708702,
+      "psf_sigma_x": 2.0792710395387113,
+      "psf_sigma_y": 2.6778881668773065,
+      "psf_theta": -28.4234116542233,
+      "gain": 31.336959928085747,
+      "enf": 1.5676445489616524,
+      "optical_bg_lipid": 1.15310527998344,
+      "spot_density": 480.57932693266997
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_061",
+    "fitted_params": {
+      "lipid_brightness": 14072.747339613827,
+      "psf_sigma_x": 1.773568986238054,
+      "psf_sigma_y": 2.6203365519788413,
+      "psf_theta": 14.196254611615718,
+      "gain": 14.761905477873926,
+      "enf": 2.40238636063346,
+      "optical_bg_lipid": 2.5938447748911817,
+      "spot_density": 621.7889153681889
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_062",
+    "fitted_params": {
+      "lipid_brightness": 18750.334319408976,
+      "psf_sigma_x": 2.2575954416143578,
+      "psf_sigma_y": 2.3808033098653336,
+      "psf_theta": -40.437675657851216,
+      "gain": 27.940340565940893,
+      "enf": 1.5842417027668951,
+      "optical_bg_lipid": 1.5314897286889517,
+      "spot_density": 429.66290276623505
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_063",
+    "fitted_params": {
+      "lipid_brightness": 11097.795409907803,
+      "psf_sigma_x": 1.8170610493131987,
+      "psf_sigma_y": 1.8273550379437207,
+      "psf_theta": -43.26562705645474,
+      "gain": 16.037746681701233,
+      "enf": 1.9525392412349816,
+      "optical_bg_lipid": 2.4469948552892564,
+      "spot_density": 736.3907375806242
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_064",
+    "fitted_params": {
+      "lipid_brightness": 15899.133653234752,
+      "psf_sigma_x": 2.390052572344022,
+      "psf_sigma_y": 2.082158023651889,
+      "psf_theta": 12.383581881282995,
+      "gain": 25.7628268975693,
+      "enf": 1.5034577611942979,
+      "optical_bg_lipid": 1.1017329429207448,
+      "spot_density": 551.5068804201557
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_065",
+    "fitted_params": {
+      "lipid_brightness": 15765.412000113452,
+      "psf_sigma_x": 1.998547879176607,
+      "psf_sigma_y": 2.495356162782598,
+      "psf_theta": 34.005527327026044,
+      "gain": 33.240472010690006,
+      "enf": 1.7990105094918074,
+      "optical_bg_lipid": 1.0595738951083453,
+      "spot_density": 591.0865494868367
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_066",
+    "fitted_params": {
+      "lipid_brightness": 15030.481677777789,
+      "psf_sigma_x": 1.9482886552557563,
+      "psf_sigma_y": 2.3458431311291514,
+      "psf_theta": 40.30909011500754,
+      "gain": 28.756043568185245,
+      "enf": 1.3805702825590724,
+      "optical_bg_lipid": 1.0968629892540682,
+      "spot_density": 616.9689296508459
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_067",
+    "fitted_params": {
+      "lipid_brightness": 14096.904140287541,
+      "psf_sigma_x": 2.110643162371359,
+      "psf_sigma_y": 2.000061513739393,
+      "psf_theta": -21.147104802701612,
+      "gain": 18.770455823103475,
+      "enf": 2.162672770639497,
+      "optical_bg_lipid": 1.9862656201748525,
+      "spot_density": 601.4623506379739
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_068",
+    "fitted_params": {
+      "lipid_brightness": 15245.02386745066,
+      "psf_sigma_x": 1.696971936708599,
+      "psf_sigma_y": 2.7677701379251682,
+      "psf_theta": 23.782971151733413,
+      "gain": 15.464781200077082,
+      "enf": 2.4468323258882045,
+      "optical_bg_lipid": 2.082527746245407,
+      "spot_density": 541.7419359755172
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_069",
+    "fitted_params": {
+      "lipid_brightness": 15072.118903645718,
+      "psf_sigma_x": 1.9809010059986771,
+      "psf_sigma_y": 2.3447163321594857,
+      "psf_theta": -31.121958500652628,
+      "gain": 18.13452829717742,
+      "enf": 1.7454251390882283,
+      "optical_bg_lipid": 2.2625813304299034,
+      "spot_density": 575.4270520045872
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_070",
+    "fitted_params": {
+      "lipid_brightness": 14664.797012419522,
+      "psf_sigma_x": 2.210037620928381,
+      "psf_sigma_y": 2.098368959771612,
+      "psf_theta": -0.3475062902377548,
+      "gain": 13.905474183529996,
+      "enf": 1.7435813174102657,
+      "optical_bg_lipid": 2.558488479691972,
+      "spot_density": 587.8634918122651
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_071",
+    "fitted_params": {
+      "lipid_brightness": 24368.80423825923,
+      "psf_sigma_x": 2.335066471741803,
+      "psf_sigma_y": 2.3575008049417456,
+      "psf_theta": -0.2344524563553112,
+      "gain": 21.994040793608434,
+      "enf": 2.3909217098319466,
+      "optical_bg_lipid": 2.5343080652244643,
+      "spot_density": 332.2234638616654
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_072",
+    "fitted_params": {
+      "lipid_brightness": 14121.10988116993,
+      "psf_sigma_x": 1.8220843862029723,
+      "psf_sigma_y": 2.3317603194473038,
+      "psf_theta": 25.047731706250353,
+      "gain": 18.980016793483948,
+      "enf": 2.470674125800227,
+      "optical_bg_lipid": 1.9921512401944812,
+      "spot_density": 589.5987585864012
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_073",
+    "fitted_params": {
+      "lipid_brightness": 18357.26525271906,
+      "psf_sigma_x": 2.0997096659969245,
+      "psf_sigma_y": 2.4984992659744942,
+      "psf_theta": -32.90439035123355,
+      "gain": 39.142186545575456,
+      "enf": 1.1053813011126539,
+      "optical_bg_lipid": 0.8506404900206731,
+      "spot_density": 522.9368603685659
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_074",
+    "fitted_params": {
+      "lipid_brightness": 11281.832384875239,
+      "psf_sigma_x": 1.6838121927043648,
+      "psf_sigma_y": 2.1034973730562068,
+      "psf_theta": 39.92523200957209,
+      "gain": 31.500879675555623,
+      "enf": 1.2410568718323034,
+      "optical_bg_lipid": 1.097350412463947,
+      "spot_density": 800.2000869671741
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_075",
+    "fitted_params": {
+      "lipid_brightness": 12853.556953323785,
+      "psf_sigma_x": 1.7358404509866918,
+      "psf_sigma_y": 2.3566914198829245,
+      "psf_theta": -6.469240648499376,
+      "gain": 27.310969095677688,
+      "enf": 1.5408366786418037,
+      "optical_bg_lipid": 1.3515204254837028,
+      "spot_density": 744.44871474536
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_076",
+    "fitted_params": {
+      "lipid_brightness": 13898.211266246182,
+      "psf_sigma_x": 1.9324105329383596,
+      "psf_sigma_y": 2.117537238627134,
+      "psf_theta": -29.790418195475375,
+      "gain": 20.862149827446295,
+      "enf": 2.165381437586389,
+      "optical_bg_lipid": 1.706934571813168,
+      "spot_density": 601.7856964062328
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_077",
+    "fitted_params": {
+      "lipid_brightness": 15190.085119398367,
+      "psf_sigma_x": 1.936125060396098,
+      "psf_sigma_y": 2.4558708337386213,
+      "psf_theta": -42.66708140512472,
+      "gain": 18.492514178970808,
+      "enf": 1.7158178813704883,
+      "optical_bg_lipid": 1.7615804990671053,
+      "spot_density": 562.0774878452978
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_078",
+    "fitted_params": {
+      "lipid_brightness": 16712.349598725006,
+      "psf_sigma_x": 1.7197930015745433,
+      "psf_sigma_y": 2.658367451591139,
+      "psf_theta": 21.092978158305073,
+      "gain": 18.864308582638326,
+      "enf": 2.2986225937864684,
+      "optical_bg_lipid": 2.4658395158519912,
+      "spot_density": 528.6217804492769
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_079",
+    "fitted_params": {
+      "lipid_brightness": 11152.80718470032,
+      "psf_sigma_x": 1.7488715053318478,
+      "psf_sigma_y": 2.020690374662712,
+      "psf_theta": -35.158250859060864,
+      "gain": 9.720382568631543,
+      "enf": 2.418389131766202,
+      "optical_bg_lipid": 3.7353716410050763,
+      "spot_density": 811.7672047693197
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_080",
+    "fitted_params": {
+      "lipid_brightness": 16317.416260052312,
+      "psf_sigma_x": 2.1384181391436945,
+      "psf_sigma_y": 2.133443480142794,
+      "psf_theta": -15.608408613384745,
+      "gain": 31.774309202502824,
+      "enf": 1.7664945183092917,
+      "optical_bg_lipid": 1.3345385756142423,
+      "spot_density": 545.3695745447774
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_081",
+    "fitted_params": {
+      "lipid_brightness": 13131.748016812284,
+      "psf_sigma_x": 1.9439549464491868,
+      "psf_sigma_y": 2.022413792124101,
+      "psf_theta": -26.090190170483318,
+      "gain": 29.89125385317474,
+      "enf": 1.6719463783371091,
+      "optical_bg_lipid": 1.1902198272066973,
+      "spot_density": 632.8742113448719
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_082",
+    "fitted_params": {
+      "lipid_brightness": 15802.86268404899,
+      "psf_sigma_x": 1.8315782588777558,
+      "psf_sigma_y": 2.597293252170281,
+      "psf_theta": -35.45443296126013,
+      "gain": 38.78979793546681,
+      "enf": 1.4705153202821066,
+      "optical_bg_lipid": 0.834189873601394,
+      "spot_density": 537.621391188478
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_083",
+    "fitted_params": {
+      "lipid_brightness": 16126.550778812407,
+      "psf_sigma_x": 1.7105277524799787,
+      "psf_sigma_y": 2.2549992717927365,
+      "psf_theta": 29.15703999827795,
+      "gain": 28.647595093749217,
+      "enf": 1.4162106488858306,
+      "optical_bg_lipid": 1.2977205928402022,
+      "spot_density": 546.1383371333707
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_084",
+    "fitted_params": {
+      "lipid_brightness": 14744.504178825126,
+      "psf_sigma_x": 1.8296656374596234,
+      "psf_sigma_y": 2.535156627413462,
+      "psf_theta": 38.05617438255825,
+      "gain": 19.989278442351644,
+      "enf": 2.399412623036281,
+      "optical_bg_lipid": 1.7052245425364234,
+      "spot_density": 616.477665073353
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_085",
+    "fitted_params": {
+      "lipid_brightness": 16500.7221698897,
+      "psf_sigma_x": 2.26898167583026,
+      "psf_sigma_y": 1.9770379328160663,
+      "psf_theta": 13.565043946530428,
+      "gain": 24.534016386453416,
+      "enf": 1.4656081946666504,
+      "optical_bg_lipid": 1.5042147244354749,
+      "spot_density": 506.5620541487059
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_086",
+    "fitted_params": {
+      "lipid_brightness": 12136.389473417523,
+      "psf_sigma_x": 1.770023179766879,
+      "psf_sigma_y": 2.1080083207918667,
+      "psf_theta": -13.568759281344725,
+      "gain": 29.319993444842112,
+      "enf": 1.3109399039251743,
+      "optical_bg_lipid": 1.0951734458143552,
+      "spot_density": 694.0097839815592
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_087",
+    "fitted_params": {
+      "lipid_brightness": 13850.713328760181,
+      "psf_sigma_x": 1.7875183928913376,
+      "psf_sigma_y": 2.407527358414579,
+      "psf_theta": 13.501353173747017,
+      "gain": 24.235764286557888,
+      "enf": 1.7062131358345676,
+      "optical_bg_lipid": 1.239411693530096,
+      "spot_density": 617.0140608620218
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_088",
+    "fitted_params": {
+      "lipid_brightness": 14761.314002261634,
+      "psf_sigma_x": 2.1869857177665937,
+      "psf_sigma_y": 2.079921751926047,
+      "psf_theta": -13.076496535052128,
+      "gain": 14.934764264638435,
+      "enf": 2.3704894899923925,
+      "optical_bg_lipid": 2.4640844395744046,
+      "spot_density": 628.721672776848
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_089",
+    "fitted_params": {
+      "lipid_brightness": 18314.74070786903,
+      "psf_sigma_x": 2.157953897928486,
+      "psf_sigma_y": 2.1397679624605335,
+      "psf_theta": -17.364363569928525,
+      "gain": 5.927071602258513,
+      "enf": 2.406635270103128,
+      "optical_bg_lipid": 8.588955567439122,
+      "spot_density": 494.28592638007956
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_090",
+    "fitted_params": {
+      "lipid_brightness": 11493.101376218367,
+      "psf_sigma_x": 1.6436729387180231,
+      "psf_sigma_y": 2.1679585848835523,
+      "psf_theta": 13.929472453149607,
+      "gain": 21.639701588649935,
+      "enf": 1.9582176295610472,
+      "optical_bg_lipid": 1.5295106045081093,
+      "spot_density": 733.1827468584336
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_091",
+    "fitted_params": {
+      "lipid_brightness": 16053.91071204251,
+      "psf_sigma_x": 1.8472243974824518,
+      "psf_sigma_y": 2.626318442111365,
+      "psf_theta": -30.689187507800067,
+      "gain": 17.305354305129548,
+      "enf": 2.331644380933048,
+      "optical_bg_lipid": 1.8943099066554547,
+      "spot_density": 543.148368033129
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_092",
+    "fitted_params": {
+      "lipid_brightness": 15531.79127193021,
+      "psf_sigma_x": 1.8115738218296265,
+      "psf_sigma_y": 2.651386941073865,
+      "psf_theta": 32.055238477593264,
+      "gain": 23.114874985069548,
+      "enf": 2.45765648675182,
+      "optical_bg_lipid": 1.6649535548345216,
+      "spot_density": 538.6142298379636
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_093",
+    "fitted_params": {
+      "lipid_brightness": 19714.68231894208,
+      "psf_sigma_x": 2.0650023563706523,
+      "psf_sigma_y": 2.6535380342339785,
+      "psf_theta": -34.8914206596098,
+      "gain": 14.381044474613935,
+      "enf": 2.4052113650751115,
+      "optical_bg_lipid": 2.9310723203807494,
+      "spot_density": 442.64510250247673
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_094",
+    "fitted_params": {
+      "lipid_brightness": 12769.391077287002,
+      "psf_sigma_x": 1.6574643445505808,
+      "psf_sigma_y": 2.2907737737893106,
+      "psf_theta": -21.15286932398379,
+      "gain": 19.846286365026828,
+      "enf": 1.445844736380092,
+      "optical_bg_lipid": 1.4880680661625605,
+      "spot_density": 712.2370008244862
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_095",
+    "fitted_params": {
+      "lipid_brightness": 12414.648188464767,
+      "psf_sigma_x": 1.7171990594243898,
+      "psf_sigma_y": 2.2923677174762176,
+      "psf_theta": 3.7439447800905414,
+      "gain": 19.858155568911627,
+      "enf": 2.2196460030036556,
+      "optical_bg_lipid": 1.68294862485681,
+      "spot_density": 700.1099649083152
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_096",
+    "fitted_params": {
+      "lipid_brightness": 16135.92199244265,
+      "psf_sigma_x": 1.9161903450451592,
+      "psf_sigma_y": 2.4189095414085555,
+      "psf_theta": -9.40175698924812,
+      "gain": 26.33864546515637,
+      "enf": 2.029361425821534,
+      "optical_bg_lipid": 1.979484192710641,
+      "spot_density": 484.71149980986
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_097",
+    "fitted_params": {
+      "lipid_brightness": 15082.780727824183,
+      "psf_sigma_x": 1.764112886815994,
+      "psf_sigma_y": 2.3415765436692153,
+      "psf_theta": 32.473717551001144,
+      "gain": 13.414589624195461,
+      "enf": 2.1155196692999705,
+      "optical_bg_lipid": 2.862144702160557,
+      "spot_density": 666.668782802103
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_098",
+    "fitted_params": {
+      "lipid_brightness": 16204.491163556182,
+      "psf_sigma_x": 2.0595785156922,
+      "psf_sigma_y": 2.3683930642586692,
+      "psf_theta": -26.973447669646614,
+      "gain": 22.01512827445086,
+      "enf": 2.3163514249606196,
+      "optical_bg_lipid": 1.4307753228011535,
+      "spot_density": 497.34107448191895
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "repeat_099",
+    "fitted_params": {
+      "lipid_brightness": 14369.33795164717,
+      "psf_sigma_x": 1.8533069109751152,
+      "psf_sigma_y": 2.2072104906010424,
+      "psf_theta": -37.23484776266728,
+      "gain": 18.199374810715355,
+      "enf": 2.3794502319600883,
+      "optical_bg_lipid": 2.3767298338307326,
+      "spot_density": 631.9172044579811
+    },
+    "status": "ok"
+  }
+]

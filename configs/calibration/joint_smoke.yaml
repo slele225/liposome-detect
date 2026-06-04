@@ -11,10 +11,10 @@ seed: 0
 samples:
   - name: 20nM_EGFP
     image_dir: data/20nM_EGFP/images
-    dark_dir: data/20nM_EGFP/dark frames
+    dark_dir: data/20nM_EGFP/dark_frames
     dls_path: data/20nM_EGFP/batch1_dls_corrected.xlsx
   - name: 300nM_endophilin
-    image_dir: data/300nM_endophilin/Images
-    dark_dir: data/300nM_endophilin/Dark_frames
+    image_dir: data/300nM_endophilin/images
+    dark_dir: data/300nM_endophilin/dark_frames
     dls_path: data/300nM_endophilin/Ternary 0.5% PEGB.xlsx
     n_frames_for_calibration: 20

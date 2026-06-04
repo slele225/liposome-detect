@@ -1,0 +1,86 @@
+[
+  {
+    "run_id": "20nM_EGFP",
+    "fitted_params": {
+      "lipid_brightness": 4845.2744600276765,
+      "psf_sigma_x": 1.9262914179554622,
+      "psf_sigma_y": 1.9278075939453634,
+      "psf_theta": 44.88440276461051,
+      "gain": 21.71544485766664,
+      "enf": 1.5786318925636416,
+      "optical_bg_lipid": 0.2999389379452217,
+      "spot_density": 596.2834802696218
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "50nM_EGFP",
+    "fitted_params": {
+      "lipid_brightness": 8398.72061396728,
+      "psf_sigma_x": 1.9288152727041596,
+      "psf_sigma_y": 1.688209094730538,
+      "psf_theta": 23.89975258067767,
+      "gain": 10.680647633703744,
+      "enf": 1.5594265609252058,
+      "optical_bg_lipid": 0.30082337574210394,
+      "spot_density": 488.630821240154
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "100nM_EGFP",
+    "fitted_params": {
+      "lipid_brightness": 6408.738791150224,
+      "psf_sigma_x": 1.600268282668195,
+      "psf_sigma_y": 2.101580528330572,
+      "psf_theta": -43.49614020402261,
+      "gain": 14.51501746295347,
+      "enf": 1.6758736996658736,
+      "optical_bg_lipid": 0.6363163092225739,
+      "spot_density": 512.1182841329244
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "300nM_EGFP",
+    "fitted_params": {
+      "lipid_brightness": 5160.627934000206,
+      "psf_sigma_x": 1.8464753707756034,
+      "psf_sigma_y": 1.4896300062493861,
+      "psf_theta": -14.392894122603877,
+      "gain": 13.522754786828964,
+      "enf": 2.2781645560983197,
+      "optical_bg_lipid": 0.4743269516413264,
+      "spot_density": 525.6088741069013
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "25nM_endophilin",
+    "fitted_params": {
+      "lipid_brightness": 16526.973956031383,
+      "psf_sigma_x": 1.7858362422924359,
+      "psf_sigma_y": 2.5949432021943397,
+      "psf_theta": -5.813570404157773,
+      "gain": 19.21680846467255,
+      "enf": 2.0796305093463348,
+      "optical_bg_lipid": 2.1675558893280735,
+      "spot_density": 532.4331351445458
+    },
+    "status": "ok"
+  },
+  {
+    "run_id": "300nM_endophilin",
+    "fitted_params": {
+      "lipid_brightness": 12245.334133452257,
+      "psf_sigma_x": 2.2954177331779504,
+      "psf_sigma_y": 1.7714535679105157,
+      "psf_theta": 35.178268579813285,
+      "gain": 18.530293459396017,
+      "enf": 1.870194560369582,
+      "optical_bg_lipid": 1.168283494518624,
+      "spot_density": 834.1189287589667
+    },
+    "status": "ok"
+  }
+]

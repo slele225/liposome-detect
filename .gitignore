@@ -11,10 +11,6 @@ calibrations/*
 # scaffold (EXPERIMENT.md, run.sh, analyze.py, config_snapshot/) tracked, but
 # ignore the per-run calibrations, figures and aggregated results.
 experiments/*/runs/
-experiments/*/figures/
-experiments/*/results.json
-experiments/*/aggregated_params.csv
-experiments/*/run_manifest.json
 
 # Python
 __pycache__/
@@ -28,3 +24,5 @@ __pycache__/
 # Model checkpoints
 *.pt
 *.pth
+data.tar
+*.tar
