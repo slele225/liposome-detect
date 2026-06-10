@@ -1,0 +1,88 @@
+# Two-channel HRNet detector — SHORT diagnostic run (the GATE before a full run).
+#
+# Purpose: a real-scale-but-short run to OBSERVE two things smoke scale cannot show
+# (see docs / PROMPT 2c): (1) per-term WEIGHTED balance AFTER the focal heatmap term
+# drops, and (2) whether the static val_total steps at the MSE->NLL boundary (a
+# metric artifact) or genuinely regresses. Read the verdict from src.train.diagnostic,
+# THEN configure the separate full convergence run from what it shows.
+#
+# Inherits the rebalanced hrnet_v1 loss weights + emphasis schedule UNCHANGED. The
+# only diagnostic differences: short epoch budget, RELAXED early stopping (so the
+# run is NOT truncated — we want to watch the full boundary), a separate real-sized
+# val set, and norm/eps placeholders to be filled from compute_stats.
+name: hrnet_diagnostic
+seed: 0
+# epochs = nll_warmup_epochs (5) + emphasis_ramp_epochs (3) + 6 -> several epochs
+# PAST the fully-ramped Phase 2, so the boundary behavior is fully visible.
+epochs: 14
+batch_size: 16
+nll_warmup_epochs: 5
+resume: false
+
+data:
+  dataset: datasets/diag_train        # REAL train set (generator train_v1)
+  val_dataset: datasets/diag_val      # SEPARATE real-sized val set (different seed)
+  # FILL FROM `python -m src.train.compute_stats --dataset datasets/diag_train`
+  # before running. Left null on purpose so an un-recomputed run fails loudly
+  # rather than training on representative-sample defaults.
+  norm_mean: null                     # [protein, lipid]
+  norm_std: null                      # [protein, lipid]
+
+model:
+  backbone:
+    type: hrnet
+    variant: hrnet_w18_small_v2
+    out_index: 1
+    pretrained: false
+  head_hidden: 64
+  heatmap_prior: 0.01
+  lipid_init_flux: 5000.0
+  protein_init_flux: 3000.0
+
+targets:
+  heatmap_sigma: 1.0
+
+optim:
+  lr: 2.0e-4
+  weight_decay: 1.0e-4
+  lr_warmup_frac: 0.04
+  grad_clip: 5.0
+
+loss:
+  # Inherited UNCHANGED from hrnet_v1 (rebalanced weights + emphasis schedule).
+  weights: {w_hm: 0.3, w_off: 1.0, w_lip: 1.0, w_pro: 1.0}
+  emphasis_ramp_epochs: 3
+  w_lip_phase2: 2.0
+  w_pro_phase2: 2.0
+  focal_alpha: 2.0
+  focal_beta: 4.0
+  # eps_lipid / eps_protein: FILL FROM compute_stats (null forces the recompute).
+  eps_lipid: null
+  eps_protein: null
+  beta_nll: 0.0
+  size_weight:
+    d_ref: 100.0
+    w_max: 5.0
+
+early_stopping:
+  # RELAXED for the diagnostic: we want to OBSERVE the full boundary, not stop early.
+  # Disabled outright here; the full run picks early_stop_metric per the verdict.
+  enabled: false
+  early_stop_metric: val_total        # val_total | val_detection_f1 | val_intensity_logmse
+  early_stop_burnin_epochs: 0         # ignore bad epochs until this many PAST the NLL boundary
+  patience: 1000                      # belt-and-suspenders: never trips even if re-enabled
+  min_delta: 0.0
+
+eval:
+  match_radius: 4.0
+
+decode:
+  score_threshold: 0.3
+  nms_kernel: 3
+  max_detections: 2000
+
+smoke:
+  epochs: 2
+  nll_warmup_epochs: 1
+  batch_size: 2
+  max_images: 6

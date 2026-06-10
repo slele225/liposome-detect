@@ -1,0 +1,38 @@
+# Diagnostic VAL set — SAME distribution as diag_train, DIFFERENT seed.
+#
+# A separate real-sized val set (not a fraction carved from train) so the boundary
+# metrics the diagnostic reads are measured on independent images. Distribution is
+# identical to diag_train / train_v1; only base_seed + name/output differ.
+name: diag_val
+n_images: 400
+image_size: 256
+base_seed: 99991          # distinct from diag_train (0) -> disjoint sampling
+
+calibrations:
+  - experiments/2026-06-03_per-sample-calibration/runs/20nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/50nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/100nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/300nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/25nM_endophilin/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/300nM_endophilin/calibration_results.json
+widen_frac: 0.3
+
+alpha_mode: per_spot_random
+alpha_range: [0.5, 2.2]
+mixed_global_prob: 0.5
+
+size_mode: emphasis
+size:
+  d_min: 40.0
+  d_max: 300.0
+  n_bins: 256
+  size_emphasis: 1.0
+
+sampling:
+  protein_brightness_range: [2500.0, 7500.0]
+  noise_split_range: [0.2, 5.0]
+  optical_bg_lipid_range: [0.0, 7.0]
+  eccentricity_range: [0.9, 1.1]
+
+smoke:
+  n_images: 8

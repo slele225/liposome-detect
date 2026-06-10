@@ -28,3 +28,6 @@ __pycache__/
 
 # Detector training run outputs (checkpoints/metrics/provenance) — large
 runs/
+
+# Transient compute_stats snippet written by scripts/run_diagnostic.sh
+configs/train/_diag_stats.yaml
