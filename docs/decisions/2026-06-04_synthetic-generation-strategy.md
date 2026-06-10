@@ -83,12 +83,42 @@ invariant is "no single GLOBAL alpha exists that a detector could learn and
 exploit." The correct discriminator is therefore the SPREAD of per-spot recovered
 alpha (recovered as log(protein/protein_brightness)/log(d/100)): in
 `per_spot_random` it scatters across the full sampled range (spread ≈ the std of
-the uniform alpha range, ~0.48 for [0.5,2.0]), so there is no single recoverable
+the uniform alpha range, ~0.54 for the [0.5,2.2] training range), so there is no single recoverable
 slope; in `global_coherent` every spot recovers the same value (spread ~0.22),
 i.e. one learnable slope. The marginal Pearson correlation is lower for
 per_spot_random (~0.88) than global (~0.98) but is NOT and CANNOT be zero — testing
 for zero correlation is mathematically wrong for this design. The generator tests
 assert on the recovered-alpha spread, not on marginal correlation, for this reason.
+
+### Training alpha range and the EGFP boundary
+
+EGFP (negative control, no curvature sensing) corresponds to alpha = 2
+(area-proportional, protein ∝ d²), and is both a synthetic test point and the real
+inference target. Training per-spot-random alpha is drawn over [0.5, 2.2], slightly
+WIDER than the biological/reporting range [0.5, 2.0], so that alpha=2 sits in the
+interior of the training distribution rather than at its edge — removing the
+edge-extrapolation bias that could otherwise distort protein-intensity estimation
+(and hence recovered alpha) specifically in the EGFP regime. The buffer (2.0, 2.2]
+is a numerical anchor, NOT a claim that any imaged protein exhibits alpha>2 (none
+do). Testing is still performed at alpha=2.0 and results are reported over the
+biological range [0.5, 2.0]. Same "train wider than you test" principle as the ±30%
+widening on microscope parameters.
+
+### Considered and declined: independent-protein mixing
+
+We considered mixing a fraction of `independent_protein_intensity` images (protein
+intensity drawn independent of diameter) to break the monotonic protein-vs-diameter
+relationship. DECLINED, for two reasons: (1) per-spot-random alpha already destroys
+the CONDITIONAL predictability a network would need to infer protein intensity from
+size — a given diameter maps to a wide spread of protein intensities, so size is not
+a usable shortcut, and the protein-intensity heads are supervised to MEASURE the
+protein channel directly. (2) The monotonic relationship is not a spurious prior to
+erase — it is real biology in our alpha range (small liposomes really are
+protein-fainter, just less than area-scaling predicts; that attenuation IS the
+signal). Adding independent-protein images would make training LESS like real data.
+The one residual risk — a detection-recall bias against faint small liposomes — is
+MEASURED directly by the radius-binned detection test, not pre-empted. Revisit only
+if that test shows small-liposome recall loss attributable to protein dimness.
 
 ## Spot-size distribution: emphasis for training, DLS for testing
 

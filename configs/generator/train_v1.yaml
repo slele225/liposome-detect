@@ -30,7 +30,7 @@ widen_frac: 0.3
 # decorrelated from diameter WITHIN an image, so no detector can learn a global
 # enrichment slope. Range is plausible curvature-sensing exponents.
 alpha_mode: per_spot_random           # per_spot_random | global_coherent | mixed
-alpha_range: [0.5, 2.0]
+alpha_range: [0.5, 2.2]               # training range; widened past the alpha=2 EGFP boundary so the negative control is interior. Test/report on [0.5,2.0].
 mixed_global_prob: 0.5                # only used when alpha_mode: mixed
 
 # Diameter distribution. Training emphasizes the small/high-curvature tail.

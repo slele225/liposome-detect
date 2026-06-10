@@ -13,7 +13,7 @@ calibrations:
 widen_frac: 0.3
 
 alpha_mode: per_spot_random
-alpha_range: [0.5, 2.0]
+alpha_range: [0.5, 2.2]               # training range; widened past the alpha=2 EGFP boundary so the negative control is interior. Test/report on [0.5,2.0].
 
 size_mode: emphasis
 size:

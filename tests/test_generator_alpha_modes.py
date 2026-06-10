@@ -4,9 +4,9 @@ so no SINGLE alpha is recoverable within an image; global_coherent must not.
 IMPORTANT — why this does NOT test ``corr(protein, diameter) ≈ 0``:
 The prompt suggested asserting that raw corr(protein_intensity, diameter) ≈ 0 for
 per_spot_random. That is mathematically unattainable for the DOCUMENTED design:
-alpha is drawn POSITIVE (e.g. [0.5, 2.0]), so protein ∝ d**alpha is monotone
-increasing in d for every spot regardless of its alpha — larger liposomes are
-always somewhat brighter. Measured raw Pearson corr is ~0.88 for per_spot_random
+alpha is drawn POSITIVE (training range [0.5, 2.2]), so protein ∝ d**alpha is
+monotone increasing in d for every spot regardless of its alpha — larger liposomes
+are always somewhat brighter. Measured raw Pearson corr is ~0.87 for per_spot_random
 (vs ~0.98 for global_coherent), NOT ~0. The decision record's actual invariant is
 that per_spot_random "cannot encode a GLOBAL alpha–diameter relationship" — i.e.
 there is no single recoverable slope, NOT that the marginal correlation vanishes.
@@ -57,19 +57,22 @@ def _mean_marginal_corr(spec, n=8):
 
 
 def test_per_spot_random_scrambles_alpha(make_spec):
-    ps = make_spec(_fixed_density_overrides('per_spot_random', [0.5, 2.0]))
+    # Training per-spot-random range is [0.5, 2.2] (widened past the alpha=2 EGFP
+    # boundary so the negative control is interior; see the strategy doc).
+    ps = make_spec(_fixed_density_overrides('per_spot_random', [0.5, 2.2]))
     gc = make_spec(_fixed_density_overrides('global_coherent', [1.5, 1.5]))
     std_ps = _recovered_alpha_std(ps)
     std_gc = _recovered_alpha_std(gc)
-    # per_spot spread ~ std of U(0.5,2) ≈ 0.43 (measured ~0.48); global is eta-only.
-    assert std_ps > 0.35
+    # per_spot spread ~ std of U(0.5,2.2) over width 1.7 ≈ 0.49 + eta inflation
+    # (re-measured ~0.54, min ~0.51); global_coherent is eta-only (~0.22).
+    assert std_ps > 0.45
     assert std_gc < 0.30
     assert std_ps > 1.5 * std_gc
 
 
 def test_marginal_corr_lower_for_per_spot_but_not_zero(make_spec):
     """Documents the real effect: per_spot LOWERS corr but does NOT zero it."""
-    ps = make_spec(_fixed_density_overrides('per_spot_random', [0.5, 2.0]))
+    ps = make_spec(_fixed_density_overrides('per_spot_random', [0.5, 2.2]))
     gc = make_spec(_fixed_density_overrides('global_coherent', [1.5, 1.5]))
     corr_ps = _mean_marginal_corr(ps)
     corr_gc = _mean_marginal_corr(gc)
@@ -79,12 +82,12 @@ def test_marginal_corr_lower_for_per_spot_but_not_zero(make_spec):
 
 
 def test_per_spot_alpha_fields_are_distinct(make_spec):
-    ps = make_spec({'alpha_mode': 'per_spot_random', 'alpha_range': [0.5, 2.0]})
+    ps = make_spec({'alpha_mode': 'per_spot_random', 'alpha_range': [0.5, 2.2]})
     _, lab = generate_one_image(0, ps)
     alphas = [s['alpha_used'] for s in lab['spots']]
     assert len(alphas) > 50
     assert len(set(np.round(alphas, 6))) > 20      # many independent values
-    assert min(alphas) >= 0.5 and max(alphas) <= 2.0
+    assert min(alphas) >= 0.5 and max(alphas) <= 2.2
     assert lab['meta']['image_alpha'] is None
 
 
@@ -98,7 +101,7 @@ def test_global_coherent_alpha_is_shared(make_spec):
 
 def test_mixed_mode_resolves_per_image(make_spec):
     mx = make_spec({'alpha_mode': 'mixed', 'mixed_global_prob': 0.5,
-                    'alpha_range': [0.5, 2.0]})
+                    'alpha_range': [0.5, 2.2]})
     modes = set()
     for i in range(16):
         _, lab = generate_one_image(i, mx)
