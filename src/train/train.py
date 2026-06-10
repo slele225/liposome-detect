@@ -24,7 +24,13 @@ from torch.utils.data import DataLoader
 from src.provenance import write_provenance
 from src.models.decode import decode_image, write_detections
 from src.train.dataset import SyntheticSpotDataset, collate, targets_to_device
-from src.train.engine import build_scheduler, evaluate, train_one_epoch
+from src.train.engine import (
+    EarlyStopping,
+    build_scheduler,
+    evaluate,
+    schedule_weights,
+    train_one_epoch,
+)
 
 
 def set_seed(seed):
@@ -136,27 +142,58 @@ def run_training(cfg, config_path, n_workers=0, smoke=False):
           f"train={len(train_ds)} val={len(val_ds)} epochs={epochs}")
 
     nll_warmup = int(cfg['nll_warmup_epochs'])
+    es_cfg = cfg.get('early_stopping', {}) or {}
+    es_enabled = bool(es_cfg.get('enabled', True))
+    es_metric = es_cfg.get('metric', 'val_total')        # lower-is-better val key
+    stopper = EarlyStopping(patience=int(es_cfg.get('patience', 10)),
+                            min_delta=float(es_cfg.get('min_delta', 0.0)))
+    best_path = output_dir / 'best.pt'
+
     metrics_path = output_dir / 'metrics.jsonl'
     t0 = time.time()
     last = {}
     for epoch in range(start_epoch, epochs):
         use_nll = epoch >= nll_warmup
-        tr = train_one_epoch(model, train_loader, opt, scheduler, cfg, device, use_nll)
+        # Per-epoch emphasis weights (heatmap-led -> intensity-led at the NLL switch).
+        weights = schedule_weights(cfg, epoch)
+        tr = train_one_epoch(model, train_loader, opt, scheduler, cfg, device,
+                             use_nll, weights=weights)
         ev = evaluate(model, val_loader, cfg, device)
-        rec = {'epoch': epoch, 'use_nll': use_nll,
+        rec = {'epoch': epoch, 'use_nll': use_nll, 'weights': weights,
                'lr': scheduler.get_last_lr()[0], 'train': tr, 'val': ev}
+
+        # Early stopping on a STATIC-weighted val metric (the emphasis ramp reweights
+        # TRAIN only, so the yardstick doesn't move). Keep the best-val checkpoint.
+        metric = ev.get(es_metric)
+        improved, should_stop = (stopper.update(metric, epoch)
+                                 if (es_enabled and metric is not None)
+                                 else (False, False))
+        rec['early_stopping'] = {'metric': es_metric, 'value': metric,
+                                 'best': stopper.best, 'best_epoch': stopper.best_epoch,
+                                 'num_bad': stopper.num_bad, 'improved': improved}
         with open(metrics_path, 'a') as f:
             f.write(json.dumps(rec) + '\n')
+        mstr = f"{metric:.4f}" if metric is not None else "n/a"
         print(f"[train] epoch {epoch} nll={use_nll} "
+              f"w=(hm={weights['w_hm']:.2f} off={weights['w_off']:.2f} "
+              f"lip={weights['w_lip']:.2f} pro={weights['w_pro']:.2f}) "
               f"train_total={tr['total']:.4f} "
               f"(hm={tr['heatmap']:.4f} off={tr['offset']:.4f} "
               f"lip={tr['lipid']:.4f} pro={tr['protein']:.4f}) "
-              f"val_f1={ev['f1']:.3f} lip_logerr={ev['lipid_log_error']:.3f} "
-              f"pro_logerr={ev['protein_log_error']:.3f}")
-        torch.save({'epoch': epoch, 'model': model.state_dict(),
-                    'optim': opt.state_dict(), 'scheduler': scheduler.state_dict(),
-                    'config': cfg}, ckpt_path)
+              f"val_f1={ev['f1']:.3f} {es_metric}={mstr} "
+              f"best@{stopper.best_epoch} bad={stopper.num_bad}")
+        ck = {'epoch': epoch, 'model': model.state_dict(),
+              'optim': opt.state_dict(), 'scheduler': scheduler.state_dict(),
+              'config': cfg}
+        torch.save(ck, ckpt_path)                          # last (for resume)
+        if improved:
+            torch.save(ck, best_path)                      # best-val (kept on stop)
         last = rec
+        if should_stop:
+            print(f"[train] early stop at epoch {epoch}: no {es_metric} improvement "
+                  f"for {stopper.patience} epochs (best@{stopper.best_epoch}="
+                  f"{stopper.best:.4f}) -> {best_path}")
+            break
 
     try:
         write_provenance(output_dir, config_path, name=cfg['name'],

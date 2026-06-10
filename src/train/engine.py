@@ -7,6 +7,12 @@ Two SEPARATE warmups (do not conflate):
     ``nll_warmup_epochs`` epochs, then the full heteroscedastic NLL. Decided by
     ``use_nll`` passed into ``train_one_epoch`` / ``compute_losses``. Prevents
     variance collapse in the uncertainty heads.
+
+The MSE->NLL switch is ALSO the emphasis-schedule boundary (``emphasis_weights``):
+ONE conceptual phase, not two. Phase 1 (detection-led, MSE) uses the static config
+weights; Phase 2 (intensity-led, NLL) ramps ``w_lip``/``w_pro`` up to their phase-2
+targets. The TRAIN objective is reweighted by the schedule; the VAL loss keeps the
+static config weights as a fixed early-stopping yardstick (``EarlyStopping``).
 """
 
 import math
@@ -25,7 +31,11 @@ from src.train.metrics import (
 
 
 def build_scheduler(optimizer, total_steps, warmup_frac):
-    """Linear warmup over ``warmup_frac`` of steps, then cosine decay to ~0."""
+    """Linear warmup over ``warmup_frac`` of steps, then cosine decay to ~0.
+
+    Single warmup->cosine, NO warm restarts. SGDR (cosine warm restarts) is the
+    deferred NSF-run lever if HRNet underfits in a way more data can't fix.
+    """
     warmup = max(1, int(total_steps * warmup_frac))
 
     def lr_lambda(step):
@@ -37,10 +47,74 @@ def build_scheduler(optimizer, total_steps, warmup_frac):
     return torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
 
-def _loss_kwargs(cfg):
+_WEIGHT_KEYS = ('w_hm', 'w_off', 'w_lip', 'w_pro')
+
+
+def emphasis_weights(epoch, nll_warmup, base_weights, phase2, ramp_epochs):
+    """Per-epoch loss weights under the heatmap-led -> intensity-led schedule.
+
+    Phase 1 (``epoch < nll_warmup``, the MSE loss-warmup): the static ``base_weights``
+    (detection-led). Phase 2 (``epoch >= nll_warmup``, NLL on): ``w_lip``/``w_pro``
+    ramp LINEARLY from their phase-1 values to ``phase2`` targets over ``ramp_epochs``,
+    starting at the NLL switch; ``w_hm``/``w_off`` are held fixed. The schedule shares
+    the MSE->NLL boundary so there is ONE phase boundary, not two.
+
+    Setting ``phase2`` targets equal to the phase-1 values => static weights (ramp
+    OFF). ``frac`` reaches 1.0 ``ramp_epochs`` epochs after the switch, so the targets
+    are held from epoch ``nll_warmup + ramp_epochs - 1`` onward.
+    """
+    w = {k: float(base_weights[k]) for k in _WEIGHT_KEYS}
+    if epoch < nll_warmup:
+        return w
+    frac = min(1.0, (epoch - nll_warmup + 1) / max(1, int(ramp_epochs)))
+    for k in ('w_lip', 'w_pro'):
+        target = float(phase2.get(k, base_weights[k]))
+        w[k] = float(base_weights[k]) + frac * (target - float(base_weights[k]))
+    return w
+
+
+def schedule_weights(cfg, epoch):
+    """Resolve ``emphasis_weights`` for ``epoch`` from a training config."""
+    L = cfg['loss']
+    base = {k: float(L['weights'][k]) for k in _WEIGHT_KEYS}
+    phase2 = {'w_lip': float(L.get('w_lip_phase2', base['w_lip'])),
+              'w_pro': float(L.get('w_pro_phase2', base['w_pro']))}
+    return emphasis_weights(epoch, int(cfg['nll_warmup_epochs']), base, phase2,
+                            int(L.get('emphasis_ramp_epochs', 3)))
+
+
+class EarlyStopping:
+    """Track the best (lowest) validation metric; stop after ``patience`` epochs
+    without improvement.
+
+    ``update(metric, epoch)`` returns ``(improved, should_stop)``. ``improved`` is
+    True when ``metric`` beats the running best by more than ``min_delta`` (the
+    harness then keeps that epoch's checkpoint as the best one); ``best_epoch`` is
+    the best-val epoch, NOT the last. Assumes lower-is-better (e.g. ``val_total``).
+    """
+
+    def __init__(self, patience=10, min_delta=0.0):
+        self.patience = int(patience)
+        self.min_delta = float(min_delta)
+        self.best = None
+        self.best_epoch = -1
+        self.num_bad = 0
+
+    def update(self, metric, epoch):
+        if self.best is None or metric < self.best - self.min_delta:
+            self.best = float(metric)
+            self.best_epoch = int(epoch)
+            self.num_bad = 0
+            return True, False
+        self.num_bad += 1
+        return False, self.num_bad >= self.patience
+
+
+def _loss_kwargs(cfg, weights=None):
+    if weights is None:
+        weights = {k: float(cfg['loss']['weights'][k]) for k in _WEIGHT_KEYS}
     return dict(
-        weights={k: float(cfg['loss']['weights'][k])
-                 for k in ('w_hm', 'w_off', 'w_lip', 'w_pro')},
+        weights={k: float(weights[k]) for k in _WEIGHT_KEYS},
         focal_alpha=float(cfg['loss']['focal_alpha']),
         focal_beta=float(cfg['loss']['focal_beta']),
         eps_lipid=float(cfg['loss']['eps_lipid']),
@@ -49,10 +123,16 @@ def _loss_kwargs(cfg):
     )
 
 
-def train_one_epoch(model, loader, optimizer, scheduler, cfg, device, use_nll):
-    """One training epoch. Returns mean total + per-term losses."""
+def train_one_epoch(model, loader, optimizer, scheduler, cfg, device, use_nll,
+                    weights=None):
+    """One training epoch. Returns mean total + per-term losses.
+
+    ``weights`` (per-epoch, from ``schedule_weights``) overrides the static config
+    weights so the emphasis schedule reweights the TRAIN objective; ``None`` falls
+    back to the static config weights.
+    """
     model.train()
-    lk = _loss_kwargs(cfg)
+    lk = _loss_kwargs(cfg, weights=weights)
     agg = {'total': 0.0, 'heatmap': 0.0, 'offset': 0.0, 'lipid': 0.0, 'protein': 0.0}
     n = 0
     for images, targets, _meta in loader:
