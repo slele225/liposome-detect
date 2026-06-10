@@ -36,13 +36,24 @@ optim:
   grad_clip: 5.0
 
 loss:
-  weights: {w_hm: 1.0, w_off: 1.0, w_lip: 1.0, w_pro: 1.0}
+  # Mirrors hrnet_v1 Phase-1 weights + emphasis schedule. ramp=1 so the single
+  # post-warmup epoch jumps straight to the phase-2 targets (exercises both phases).
+  weights: {w_hm: 0.3, w_off: 1.0, w_lip: 1.0, w_pro: 1.0}
+  emphasis_ramp_epochs: 1
+  w_lip_phase2: 2.0
+  w_pro_phase2: 2.0
   focal_alpha: 2.0
   focal_beta: 4.0
   eps_lipid: 50.0
   eps_protein: 30.0
   beta_nll: 0.0
   size_weight: {d_ref: 100.0, w_max: 5.0}
+
+early_stopping:
+  enabled: true
+  metric: val_total
+  patience: 10
+  min_delta: 0.0
 
 eval:
   match_radius: 4.0
