@@ -28,8 +28,10 @@ from src.train.engine import (
     EarlyStopping,
     build_scheduler,
     evaluate,
+    resolve_early_stopping,
     schedule_weights,
     train_one_epoch,
+    weighted_terms,
 )
 
 
@@ -71,21 +73,41 @@ def _split_indices(n, val_fraction, seed):
     return perm[n_val:].tolist(), perm[:n_val].tolist()
 
 
+def _count_images(root):
+    return len(sorted((Path(root) / 'images').glob('img_*.npy')))
+
+
 def _make_datasets(cfg, out_stride, max_images=None):
-    root = Path(cfg['data']['dataset'])
-    n_total = len(sorted((root / 'images').glob('img_*.npy')))
+    d = cfg['data']
+    root = Path(d['dataset'])
+    n_total = _count_images(root)
     if n_total == 0:
         raise FileNotFoundError(f"no images under {root/'images'}")
     if max_images is not None:
         n_total = min(n_total, max_images)
-    train_idx, val_idx = _split_indices(
-        n_total, float(cfg['data'].get('val_fraction', 0.2)), int(cfg['seed']))
-    d = cfg['data']
     common = dict(out_stride=out_stride,
                   heatmap_sigma=float(cfg['targets']['heatmap_sigma']),
                   d_ref=float(cfg['loss']['size_weight']['d_ref']),
                   w_max=float(cfg['loss']['size_weight']['w_max']),
                   norm_mean=d['norm_mean'], norm_std=d['norm_std'])
+
+    # A SEPARATE val dataset (different seed) is preferred for a real-scale
+    # diagnostic: it decouples the val set from the train set instead of carving a
+    # fraction out of one dataset. When absent, fall back to the val_fraction split.
+    val_dataset = d.get('val_dataset')
+    if val_dataset:
+        val_root = Path(val_dataset)
+        n_val = _count_images(val_root)
+        if n_val == 0:
+            raise FileNotFoundError(f"no images under {val_root/'images'}")
+        if max_images is not None:
+            n_val = min(n_val, max(1, max_images))
+        train_ds = SyntheticSpotDataset(root, indices=list(range(n_total)), **common)
+        val_ds = SyntheticSpotDataset(val_root, indices=list(range(n_val)), **common)
+        return train_ds, val_ds
+
+    train_idx, val_idx = _split_indices(
+        n_total, float(d.get('val_fraction', 0.2)), int(cfg['seed']))
     train_ds = SyntheticSpotDataset(root, indices=train_idx, **common)
     val_ds = SyntheticSpotDataset(root, indices=val_idx, **common)
     return train_ds, val_ds
@@ -142,14 +164,20 @@ def run_training(cfg, config_path, n_workers=0, smoke=False):
           f"train={len(train_ds)} val={len(val_ds)} epochs={epochs}")
 
     nll_warmup = int(cfg['nll_warmup_epochs'])
-    es_cfg = cfg.get('early_stopping', {}) or {}
-    es_enabled = bool(es_cfg.get('enabled', True))
-    es_metric = es_cfg.get('metric', 'val_total')        # lower-is-better val key
-    stopper = EarlyStopping(patience=int(es_cfg.get('patience', 10)),
-                            min_delta=float(es_cfg.get('min_delta', 0.0)))
+    # ``early_stop_metric`` selects the val key + direction; the two boundary-
+    # consistent options (val_detection_f1, val_intensity_logmse) keep the same
+    # meaning across the MSE->NLL switch. Burn-in ignores bad epochs until this
+    # many epochs PAST the boundary so a metric artifact there cannot trip it.
+    es = resolve_early_stopping(cfg.get('early_stopping', {}), nll_warmup)
+    es_enabled = es['enabled']
+    es_metric = es['metric']
+    stopper = EarlyStopping(patience=es['patience'], min_delta=es['min_delta'],
+                            mode=es['mode'], burnin_until=es['burnin_until'])
     best_path = output_dir / 'best.pt'
 
     metrics_path = output_dir / 'metrics.jsonl'
+    static_weights = {k: float(cfg['loss']['weights'][k])
+                      for k in ('w_hm', 'w_off', 'w_lip', 'w_pro')}
     t0 = time.time()
     last = {}
     for epoch in range(start_epoch, epochs):
@@ -159,14 +187,25 @@ def run_training(cfg, config_path, n_workers=0, smoke=False):
         tr = train_one_epoch(model, train_loader, opt, scheduler, cfg, device,
                              use_nll, weights=weights)
         ev = evaluate(model, val_loader, cfg, device)
+        # Per-term WEIGHTED contributions for the diagnostic's term-balance check.
+        # TRAIN uses the active per-epoch emphasis weights; VAL uses the STATIC
+        # config weights (the fixed yardstick the ramp does not move).
+        train_weighted = weighted_terms(tr, weights)
+        val_parts = {k: ev[f'val_{k}'] for k in ('heatmap', 'offset', 'lipid',
+                                                 'protein')}
+        val_weighted = weighted_terms(val_parts, static_weights)
         rec = {'epoch': epoch, 'use_nll': use_nll, 'weights': weights,
-               'lr': scheduler.get_last_lr()[0], 'train': tr, 'val': ev}
+               'lr': scheduler.get_last_lr()[0], 'train': tr, 'val': ev,
+               'train_weighted': train_weighted, 'val_weighted': val_weighted}
 
         # Early stopping on a STATIC-weighted val metric (the emphasis ramp reweights
         # TRAIN only, so the yardstick doesn't move). Keep the best-val checkpoint.
         metric = ev.get(es_metric)
+        # Skip nan metrics (e.g. logmse before any detection matches) — they would
+        # poison the best-so-far comparison.
+        metric_ok = metric is not None and metric == metric
         improved, should_stop = (stopper.update(metric, epoch)
-                                 if (es_enabled and metric is not None)
+                                 if (es_enabled and metric_ok)
                                  else (False, False))
         rec['early_stopping'] = {'metric': es_metric, 'value': metric,
                                  'best': stopper.best, 'best_epoch': stopper.best_epoch,

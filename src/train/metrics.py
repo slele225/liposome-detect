@@ -62,3 +62,25 @@ def intensity_log_error(preds, gts, matches, eps_lipid=10.0, eps_protein=10.0):
         pro.append(abs(np.log(preds[pi]['protein_intensity'] + eps_protein)
                        - np.log(gts[gj]['protein_intensity'] + eps_protein)))
     return float(np.mean(lip)), float(np.mean(pro))
+
+
+def intensity_log_mse(preds, gts, matches, eps_lipid=10.0, eps_protein=10.0):
+    """Mean SQUARED log-residual of lipid and protein flux over matched pairs.
+
+    Boundary-consistent intensity metric: unlike the loss's intensity term (which
+    switches MSE->NLL at the loss-warmup boundary), this is always the same plain
+    log-space MSE of the DECODED predicted flux vs GT, so its meaning does not
+    change across the phase boundary. Used as an early-stop option and by the
+    diagnostic to tell a real regression from a metric artifact at the boundary.
+    """
+    if not matches:
+        return float('nan'), float('nan')
+    lip, pro = [], []
+    for pi, gj in matches:
+        rl = (np.log(preds[pi]['lipid_intensity'] + eps_lipid)
+              - np.log(gts[gj]['lipid_intensity'] + eps_lipid))
+        rp = (np.log(preds[pi]['protein_intensity'] + eps_protein)
+              - np.log(gts[gj]['protein_intensity'] + eps_protein))
+        lip.append(rl * rl)
+        pro.append(rp * rp)
+    return float(np.mean(lip)), float(np.mean(pro))
