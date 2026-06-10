@@ -17,6 +17,10 @@ total_loss = w_hm * heatmap_loss
            + w_int * intensity_nll_logspace   # lipid + protein
            + (uncertainty is folded into the NLL term, not separate)
 
+Offset (subpixel localization): a fourth term w_off·L1(offset) regresses the
+CenterNet (dx,dy) at GT centers. It acts on location only — no intensity or
+diameter coupling — so it does not affect the alpha-agnostic invariant.
+
 ## 1. Heatmap loss — detection (penalty-reduced focal + size weight)
 
 Per-pixel center-detection map. Ground-truth centers splatted as Gaussian bumps
