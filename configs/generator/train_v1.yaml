@@ -1,0 +1,54 @@
+# Stage-2 synthetic TRAINING set (the default training distribution).
+#
+# Strategy: docs/decisions/2026-06-04_synthetic-generation-strategy.md
+# Protein:  docs/decisions/2026-06-04_protein-channel-parameterization.md
+# This file holds the exact numeric knobs; the docs hold the "why".
+#
+# One detector for all imaging settings: parameters are sampled over the UNION of
+# the six per-sample calibrations, widened ±30%. alpha is per-spot-random
+# (alpha-agnostic). Diameters use small-size (curvature) emphasis. Output is
+# gitignored (datasets/), so only this config + provenance are tracked.
+name: train_v1
+# output_dir: datasets/train_v1        # default = datasets/<name>
+n_images: 4000
+image_size: 256
+base_seed: 0
+
+# Per-sample calibrations whose fitted ranges define the sampling envelope.
+# (These live under experiments/*/runs/ which is gitignored — regenerate the
+# per-sample study on the VM if absent. The union of all six spans every setting.)
+calibrations:
+  - experiments/2026-06-03_per-sample-calibration/runs/20nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/50nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/100nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/300nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/25nM_endophilin/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/300nM_endophilin/calibration_results.json
+widen_frac: 0.3
+
+# Alpha (curvature exponent). Default per-spot-random => protein intensity is
+# decorrelated from diameter WITHIN an image, so no detector can learn a global
+# enrichment slope. Range is plausible curvature-sensing exponents.
+alpha_mode: per_spot_random           # per_spot_random | global_coherent | mixed
+alpha_range: [0.5, 2.0]
+mixed_global_prob: 0.5                # only used when alpha_mode: mixed
+
+# Diameter distribution. Training emphasizes the small/high-curvature tail.
+size_mode: emphasis                   # emphasis (train) | dls (test/Phase 3)
+size:
+  d_min: 40.0
+  d_max: 300.0
+  n_bins: 256
+  size_emphasis: 1.0                  # 1.0 = uniform-in-curvature (1/d); 0.0 = uniform-in-d
+
+sampling:
+  # protein_brightness ~ wide realistic range per image (EGFP-control scale ±50%).
+  protein_brightness_range: [2500.0, 7500.0]
+  noise_split_range: [0.2, 5.0]       # log-uniform gain/enf split (must never matter)
+  optical_bg_lipid_range: [0.0, 7.0]  # lipid optical background (photons)
+  eccentricity_range: [0.9, 1.1]      # near-circular PSF
+  # fixed_spot_density: 200           # override for deterministic density sweeps (test)
+
+smoke:
+  n_images: 8
+  # real_tiff: data/20nM_EGFP/images/<a_real_frame>.tif   # optional comparison panel

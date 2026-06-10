@@ -1,0 +1,33 @@
+# Tiny smoke config — fast correctness check, NOT a real dataset.
+#   python -m src.generator.generate --config configs/generator/smoke.yaml --smoke
+# Writes a handful of images + smoke/overlay.png + smoke/comparison.png so spot
+# placement, counts and the two channels are visually checkable before scaling.
+name: smoke
+n_images: 8
+image_size: 256
+base_seed: 0
+
+calibrations:
+  - experiments/2026-06-03_per-sample-calibration/runs/20nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/25nM_endophilin/calibration_results.json
+widen_frac: 0.3
+
+alpha_mode: per_spot_random
+alpha_range: [0.5, 2.0]
+
+size_mode: emphasis
+size:
+  d_min: 40.0
+  d_max: 300.0
+  n_bins: 128
+  size_emphasis: 1.0
+
+sampling:
+  protein_brightness_range: [2500.0, 7500.0]
+  noise_split_range: [0.2, 5.0]
+  optical_bg_lipid_range: [0.0, 7.0]
+  eccentricity_range: [0.9, 1.1]
+
+smoke:
+  n_images: 6
+  # real_tiff: data/20nM_EGFP/images/<a_real_frame>.tif
