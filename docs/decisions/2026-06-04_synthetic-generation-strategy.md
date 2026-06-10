@@ -74,6 +74,22 @@ from one call, build protein per-spot with each spot's own alpha, reusing the
 simulator's flux formula and noise path). Any need to change the simulator is
 surfaced to the human, not done unilaterally.
 
+Implementation note (the per-spot-random invariant — read carefully): the
+alpha-agnostic property is NOT "protein intensity and diameter are uncorrelated."
+They are necessarily correlated — protein flux ∝ d^alpha with alpha > 0 is
+monotone increasing in d for every spot, so larger liposomes are always somewhat
+brighter, and that correlation IS the curvature signal we measure. The actual
+invariant is "no single GLOBAL alpha exists that a detector could learn and
+exploit." The correct discriminator is therefore the SPREAD of per-spot recovered
+alpha (recovered as log(protein/protein_brightness)/log(d/100)): in
+`per_spot_random` it scatters across the full sampled range (spread ≈ the std of
+the uniform alpha range, ~0.48 for [0.5,2.0]), so there is no single recoverable
+slope; in `global_coherent` every spot recovers the same value (spread ~0.22),
+i.e. one learnable slope. The marginal Pearson correlation is lower for
+per_spot_random (~0.88) than global (~0.98) but is NOT and CANNOT be zero — testing
+for zero correlation is mathematically wrong for this design. The generator tests
+assert on the recovered-alpha spread, not on marginal correlation, for this reason.
+
 ## Spot-size distribution: emphasis for training, DLS for testing
 
 - **Training:** a wide, SMALL-SIZE-EMPHASIS diameter distribution (default uniform
