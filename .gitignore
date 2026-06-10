@@ -25,3 +25,6 @@ __pycache__/
 # Model checkpoints
 *.pt
 *.pth
+
+# Detector training run outputs (checkpoints/metrics/provenance) — large
+runs/
