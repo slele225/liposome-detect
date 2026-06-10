@@ -1,0 +1,66 @@
+# Two-channel HRNet detector — real training config (single H100).
+#
+# Loss: docs/decisions/2026-06-10_detector-loss-design.md
+# Data: docs/decisions/2026-06-04_synthetic-generation-strategy.md (a Prompt-1 set)
+# Output schema: docs/decisions/2026-06-10_benchmark-design.md
+# This file holds the exact numeric knobs; the docs hold the "why".
+name: hrnet_v1
+# output_dir: runs/hrnet_v1            # default = runs/<name> (gitignored)
+seed: 0
+epochs: 120
+batch_size: 16
+nll_warmup_epochs: 5                   # intensity = log-MSE for these epochs, then full NLL
+resume: false
+
+data:
+  dataset: datasets/train_v1           # a Prompt-1 generator dataset
+  val_fraction: 0.2
+  # Per-channel [protein, lipid] normalization. RECOMPUTE on the real dataset
+  # (these are representative values measured on a curvature-emphasis sample).
+  norm_mean: [198.0, 298.0]
+  norm_std: [102.0, 342.0]
+
+model:
+  backbone:
+    type: hrnet                        # 'hrnet' | 'dummy' (interface-swappable)
+    variant: hrnet_w18_small_v2
+    out_index: 1                       # timm HRNet stride-4 high-res branch
+    pretrained: false                  # 2-channel stem; no ImageNet weights
+  head_hidden: 64
+  heatmap_prior: 0.01                  # focal-stability bias on the heatmap head
+  lipid_init_flux: 5000.0              # mean-head bias = log(init_flux)
+  protein_init_flux: 3000.0
+
+targets:
+  heatmap_sigma: 1.0                   # GT Gaussian-bump sigma in OUTPUT pixels
+
+optim:
+  lr: 2.0e-4
+  weight_decay: 1.0e-4
+  lr_warmup_frac: 0.04                 # linear warmup fraction, then cosine -> ~0
+  grad_clip: 5.0
+
+loss:
+  weights: {w_hm: 1.0, w_off: 1.0, w_lip: 1.0, w_pro: 1.0}
+  focal_alpha: 2.0                     # focal exponent on (1-pred)/pred
+  focal_beta: 4.0                      # penalty-reduction exponent on (1-target)
+  eps_lipid: 50.0                      # log-space floor ~ relative to dimmest real lipid flux
+  eps_protein: 30.0                    # ... and protein (different noise regime)
+  beta_nll: 0.0                        # >0 enables beta-NLL stabilization
+  size_weight:                         # heatmap-only small-spot detectability weight
+    d_ref: 100.0
+    w_max: 5.0                         # clip(d_ref/d, 1, w_max); MANDATORY clamp
+
+eval:
+  match_radius: 4.0                    # fixed match radius (px) for F1
+
+decode:
+  score_threshold: 0.3
+  nms_kernel: 3                        # maxpool-NMS window (cells)
+  max_detections: 2000
+
+smoke:
+  epochs: 2
+  nll_warmup_epochs: 1
+  batch_size: 2
+  max_images: 6
