@@ -1,0 +1,12 @@
+{
+  "creation_date": "2026-06-11T04:16:32.906002",
+  "config_path": "configs/train/hrnet_v1.yaml",
+  "python_version": "3.10.12 (main, Jan  8 2026, 06:52:19) [GCC 11.4.0]",
+  "code_commit": "ab8df9cafec43e925f9effd99d8a617c5149c8a2",
+  "working_tree_dirty": true,
+  "name": "hrnet_v1",
+  "epochs": 120,
+  "seed": 0,
+  "dataset": "datasets/train_full",
+  "backbone": "hrnet"
+}

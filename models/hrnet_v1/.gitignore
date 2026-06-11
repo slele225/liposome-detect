@@ -1,0 +1,3 @@
+# The trained weights are large and gitignored repo-wide (*.pt).
+# best.pt is NOT in git. See README.md for how to obtain/regenerate it.
+best.pt
