@@ -1,0 +1,39 @@
+# Diagnostic TRAIN set — train_v1 distribution, smaller, for the SHORT gate run.
+#
+# Identical sampling to configs/generator/train_v1.yaml (same calibrations, alpha
+# mode, size emphasis, sampling ranges); only n_images + name/output differ so the
+# diagnostic produces a real-distribution set quickly. The full convergence run
+# uses the larger train_v1 set, not this one.
+name: alpha_1p00
+n_images: 400
+image_size: 256
+base_seed: 7000
+
+calibrations:
+  - experiments/2026-06-03_per-sample-calibration/runs/20nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/50nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/100nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/300nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/25nM_endophilin/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/300nM_endophilin/calibration_results.json
+widen_frac: 0.3
+
+alpha_mode: global_coherent
+alpha_range: [1.00, 1.00]
+mixed_global_prob: 0.5
+
+size_mode: emphasis
+size:
+  d_min: 40.0
+  d_max: 300.0
+  n_bins: 256
+  size_emphasis: 1.0
+
+sampling:
+  protein_brightness_range: [2500.0, 7500.0]
+  noise_split_range: [0.2, 5.0]
+  optical_bg_lipid_range: [0.0, 7.0]
+  eccentricity_range: [0.9, 1.1]
+
+smoke:
+  n_images: 8

@@ -13,12 +13,13 @@ nll_warmup_epochs: 5                   # intensity = log-MSE for these epochs, t
 resume: false
 
 data:
-  dataset: datasets/train_v1           # a Prompt-1 generator dataset
+  dataset: datasets/train_full
+  val_dataset: datasets/val_full           # a Prompt-1 generator dataset
   val_fraction: 0.2
   # Per-channel [protein, lipid] normalization. RECOMPUTE on the real dataset
   # (these are representative values measured on a curvature-emphasis sample).
-  norm_mean: [198.0, 298.0]
-  norm_std: [102.0, 342.0]
+  norm_mean: [207.43, 326.64]
+  norm_std: [121.72, 387.31]
 
 model:
   backbone:
@@ -53,20 +54,20 @@ loss:
   w_pro_phase2: 2.0
   focal_alpha: 2.0                     # focal exponent on (1-pred)/pred
   focal_beta: 4.0                      # penalty-reduction exponent on (1-target)
-  eps_lipid: 50.0                      # log-space floor ~ relative to dimmest real lipid flux
-  eps_protein: 30.0                    # ... and protein (different noise regime)
+  eps_lipid: 80.15                      # log-space floor ~ relative to dimmest real lipid flux
+  eps_protein: 62.47                    # ... and protein (different noise regime)
   beta_nll: 0.0                        # >0 enables beta-NLL stabilization
   size_weight:                         # heatmap-only small-spot detectability weight
-    d_ref: 100.0
+    d_ref: 150.0
     w_max: 5.0                         # clip(d_ref/d, 1, w_max); MANDATORY clamp
 
 early_stopping:
   enabled: true
-  metric: val_total                    # lower-is-better val metric; uses STATIC config
-                                       # weights (a fixed yardstick the emphasis ramp
-                                       # does not move -- the ramp reweights TRAIN only)
-  patience: 10                         # stop after this many non-improving epochs
-  min_delta: 0.0                       # min decrease counted as an improvement
+  early_stop_metric: val_intensity_logmse   # boundary-consistent; val_total is
+                                            # discontinuous at the NLL switch (diagnostic finding)
+  early_stop_burnin_epochs: 3               # don't count bad epochs until 3 past the NLL boundary
+  patience: 10
+  min_delta: 0.0
 
 eval:
   match_radius: 4.0                    # fixed match radius (px) for F1

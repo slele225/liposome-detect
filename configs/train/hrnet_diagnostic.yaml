@@ -25,8 +25,8 @@ data:
   # FILL FROM `python -m src.train.compute_stats --dataset datasets/diag_train`
   # before running. Left null on purpose so an un-recomputed run fails loudly
   # rather than training on representative-sample defaults.
-  norm_mean: null                     # [protein, lipid]
-  norm_std: null                      # [protein, lipid]
+  norm_mean: [207.76, 326.83]                     # [protein, lipid]
+  norm_std: [122.25, 389.07]                      # [protein, lipid]
 
 model:
   backbone:
@@ -57,8 +57,8 @@ loss:
   focal_alpha: 2.0
   focal_beta: 4.0
   # eps_lipid / eps_protein: FILL FROM compute_stats (null forces the recompute).
-  eps_lipid: null
-  eps_protein: null
+  eps_lipid: 80.07
+  eps_protein: 62.93
   beta_nll: 0.0
   size_weight:
     d_ref: 100.0
