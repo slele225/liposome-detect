@@ -18,6 +18,7 @@ dependencies = [
     "tqdm",
     "torch>=2.4,<2.9",
     "timm>=1.0,<2.0",
+    "scikit-image>=0.25.2",
 ]
 
 [dependency-groups]
