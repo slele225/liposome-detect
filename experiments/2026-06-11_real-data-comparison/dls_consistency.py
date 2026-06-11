@@ -25,25 +25,19 @@ distributions per sample.
 """
 
 import argparse
-import json
 from pathlib import Path
 
 import numpy as np
 from scipy.stats import ks_2samp, wasserstein_distance
 
-from _common import (ALL_SAMPLES, EXP_DIR, LIPID_BRIGHTNESS_CALIB,
-                     add_model_args, sample_dir)
+from _common import (ALL_SAMPLES, EXP_DIR, add_model_args, lipid_brightness_for,
+                     sample_dir)
 from src.eval.real_data import (detect_sample, find_dls_xlsx, lipid_to_diameter)
 from src.simulator.io import parse_dls
 
 PLOT_OUT = EXP_DIR / 'dls_consistency.png'
 TABLE_OUT = EXP_DIR / 'dls_consistency.csv'
 MAX_D = 500
-
-
-def load_lipid_brightness():
-    d = json.loads(Path(LIPID_BRIGHTNESS_CALIB).read_text())
-    return float(d['best_params']['lipid_brightness'])
 
 
 def detector_diameters(model, cfg, device, sdir, subtract_dark, lipid_brightness):
@@ -79,27 +73,31 @@ def main():
     ap.add_argument('--seed', type=int, default=0)
     args = ap.parse_args()
 
-    lipid_brightness = load_lipid_brightness()
     from src.eval.matching import load_model
     model, cfg, device = load_model(args.config, args.ckpt)
     rng = np.random.default_rng(args.seed)
 
     res = {}
-    print(f"lipid_brightness (size-proxy scale): {lipid_brightness:.1f}  "
-          f"({LIPID_BRIGHTNESS_CALIB})")
-    print(f"{'sample':<17} {'n_det':>7} {'wasserstein_nm':>15} {'ks':>7}")
-    print('-' * 50)
-    csv = ["sample,n_detections,wasserstein_nm,ks_statistic,"
+    # PER-SAMPLE size-proxy scale (lipid_brightness varies by prep/voltage).
+    print("lipid->diameter scale: each sample's OWN fitted lipid_brightness")
+    print(f"{'sample':<17} {'lipid_bright':>12} {'n_det':>7} "
+          f"{'wasserstein_nm':>15} {'ks':>7}")
+    print('-' * 64)
+    csv = ["sample,lipid_brightness,n_detections,wasserstein_nm,ks_statistic,"
            "det_median_nm,dls_mean_nm"]
     for s in args.samples:
+        lb = lipid_brightness_for(s)
         r = analyze(model, cfg, device, sample_dir(args.data_root, s),
-                    args.subtract_dark, lipid_brightness, rng)
+                    args.subtract_dark, lb, rng)
+        r['lipid_brightness'] = lb
         res[s] = r
         det_med = float(np.median(r['det_d'])) if r['n'] else float('nan')
         dls_mean = float(np.average(r['dls_d'], weights=r['dls_p'])) \
             if r['dls_d'].size else float('nan')
-        print(f"{s:<17} {r['n']:>7} {r['wass']:>15.2f} {r['ks']:>7.3f}")
-        csv.append(f"{s},{r['n']},{r['wass']},{r['ks']},{det_med},{dls_mean}")
+        print(f"{s:<17} {r['lipid_brightness']:>12.1f} {r['n']:>7} "
+              f"{r['wass']:>15.2f} {r['ks']:>7.3f}")
+        csv.append(f"{s},{r['lipid_brightness']},{r['n']},{r['wass']},{r['ks']},"
+                   f"{det_med},{dls_mean}")
     Path(TABLE_OUT).write_text('\n'.join(csv) + '\n')
     _plot(args.samples, res)
     print(f"\n[dls_consistency] wrote {TABLE_OUT} and {PLOT_OUT}")

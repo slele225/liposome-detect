@@ -44,11 +44,27 @@ SYNTH_EPS = {'protein': 62.47, 'lipid': 80.15}
 # order-of-magnitude normalization/offset mismatch -> WARN.
 PLAUSIBLE_FLUX_BAND = (30.0, 50000.0)
 
-# Calibration with the shared (microscope) lipid_brightness used as the
-# lipid-intensity -> diameter size proxy in dls_consistency.py.
-LIPID_BRIGHTNESS_CALIB = str(
-    REPO_ROOT / 'experiments' / '2026-06-03_per-sample-calibration'
-    / 'runs' / '20nM_EGFP' / 'calibration_results.json')
+# PER-SAMPLE calibration directory. lipid_brightness was fit INDEPENDENTLY per
+# sample and genuinely varies (different 561 voltage / prep): EGFP ~4.8k-8.4k,
+# endophilin ~12k-16k. The lipid->diameter size proxy MUST use each sample's OWN
+# lipid_brightness, or recovered sizes (and the DLS check) are spurious for the
+# others. NOTE: this scale does NOT affect alpha (alpha is the log-log SLOPE,
+# scale-invariant; a lipid_brightness error shifts the intercept, not the slope),
+# so the EGFP=2.0 go/no-go is robust to it — only the DLS anchor and recovered
+# sizes depend on it. So we fix it here for the DLS/size reporting.
+PER_SAMPLE_CALIB_DIR = (REPO_ROOT / 'experiments'
+                        / '2026-06-03_per-sample-calibration' / 'runs')
+
+
+def lipid_brightness_for(sample):
+    """That sample's OWN fitted ``lipid_brightness`` (size-proxy scale).
+
+    Reads ``runs/<sample>/calibration_results.json`` -> ``best_params`` (the shared
+    microscope block; lipid_brightness is fit per independent per-sample calibration).
+    """
+    import json
+    p = PER_SAMPLE_CALIB_DIR / sample / 'calibration_results.json'
+    return float(json.loads(p.read_text())['best_params']['lipid_brightness'])
 
 
 def add_model_args(ap):

@@ -145,6 +145,23 @@ def main():
         else:
             lines.append("  READING: see the numbers above; interpret per the "
                          "EXPERIMENT.md go/no-go criteria.")
+        # Internal consistency: the 4 EGFP samples share ONE liposome prep, so under
+        # the correct pipeline their CORRECTED alphas should be mutually consistent
+        # (all ~2.0). Divergence (e.g. concentration-dependent leakage) is a RED FLAG
+        # separate from the standard-vs-corrected bias.
+        cor_vals = [r['cor'] for r in egfp]
+        spread = float(np.max(cor_vals) - np.min(cor_vals))
+        lines += [
+            f"  EGFP internal consistency : CORRECTED spread (max-min) = {spread:.3f} "
+            f"across the 4 samples",
+        ]
+        if spread > 0.3:
+            lines.append("    RED FLAG: EGFP corrected alphas DIVERGE (>0.3) despite "
+                         "a shared prep -> suspect concentration-dependent leakage / "
+                         "a per-concentration artifact, NOT the OLS-vs-EIV bias.")
+        else:
+            lines.append("    OK: EGFP corrected alphas are mutually consistent "
+                         "(shared prep -> shared alpha, as expected).")
 
     # Endophilin: does the correction change the biological reading?
     endo = [(s, results[s]) for s in ENDO_SAMPLES
