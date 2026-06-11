@@ -65,7 +65,14 @@ Tier 3 (cheap floor, expected by reviewers):
 ONE pipeline, swap the detector. Defined once, applied identically:
 
   detect spots  →  local-mask protein integration (PI's method)  →
-  fit log-log sorting curve (protein intensity vs diameter)  →  recovered alpha
+  fit log-log sorting curve (log-protein vs log-lipid intensity)  →  recovered alpha
+
+The sorting-curve regressor is **log(protein) vs log(lipid intensity)**, NOT protein
+vs diameter: on REAL data there is no ground-truth diameter, and lipid flux is the
+size proxy (lipid ∝ d²), so the slope of log-protein on log-lipid IS α/2 ⇒
+**α = 2·slope**. On synthetic data GT diameter is known and used for size-BINNING and
+validation, but the alpha estimate itself uses the lipid-intensity axis so the
+synthetic and real paths are identical.
 
 - Every method's detector produces centroids (on the LIPID channel — one liposome,
   one location, lipid present regardless of protein binding; detecting on protein
@@ -75,15 +82,46 @@ ONE pipeline, swap the detector. Defined once, applied identically:
   the PI's prescription. This isolates DETECTION quality; everyone gets the same
   photometry so we are not comparing photometry methods.
 - EXCEPTION = the contribution: OUR full config (Tier 1.ii) replaces the shared
-  photometry with its own learned per-spot intensity + uncertainty, and weights the
-  sorting-curve fit by that uncertainty. Reporting BOTH our configs isolates how
-  much advantage comes from (a) better/cross-channel detection vs (b) learned
-  uncertainty-weighted intensity.
+  photometry with its own learned per-spot intensity + uncertainty. The sorting-curve
+  fit itself stays the UNWEIGHTED constant-λ Deming estimator (per-spot weighting is
+  rejected — see "Alpha estimator" below); the per-spot uncertainty feeds QC and the
+  alpha error-propagation / confidence interval, not the fit weights. Reporting BOTH
+  our configs isolates how much advantage comes from (a) better/cross-channel
+  detection vs (b) the learned intensity + its calibrated uncertainty (tighter CIs).
 - SpotMAX is the one method allowed to use its OWN quantification too (since that
   is its published pipeline), reported alongside the shared-photometry version.
 
 Method-neutral matching: matched-detection F1 with a FIXED match radius, identical
 for all methods, against synthetic ground truth.
+
+## Alpha estimator: unweighted errors-in-variables (constant-λ Deming)
+
+Fixed once, applied identically to EVERY benchmarked method (established on the
+Stage-2 run — see
+[experiments/2026-06-10_diagnostic-run/EXPERIMENT.md](../../experiments/2026-06-10_diagnostic-run/EXPERIMENT.md)):
+
+- The recovered alpha is **α = 2·slope** of log(protein) on log(lipid). BOTH axes are
+  noisy (lipid: PMT noise; protein: PMT + η heterogeneity), so **ordinary least
+  squares is BIASED LOW** (regression dilution): x-axis noise attenuates the slope.
+  On fixed-alpha synthetic sets, OLS on TRUE intensities recovered ~0.42/0.85/1.28/1.70
+  for true 0.5/1.0/1.5/2.0.
+- The estimator is therefore **constant-λ Deming (total least squares / errors-in-
+  variables)**, which corrects the dilution and recovers the diagonal (~0.46/0.93/
+  1.42/1.92 on TRUE intensities). This is a correct estimator the whole field should
+  use — **not a moat** — so it is applied identically to ours AND every baseline; no
+  method is scored with the biased OLS slope.
+- **Per-spot uncertainty WEIGHTING was tested and REJECTED for this assay.** A correct
+  per-point errors-in-variables fit (York 1968/2004) was validated on synthetic
+  known noise (recovers the slope with ~1/3 the variance of constant-λ), but on the
+  assay it biases alpha LOW because predicted per-spot variance is confounded with the
+  regression x-axis (log-lipid), **r ≈ +0.58** — weighting one end of the line tilts
+  the slope. This is structural to the assay, not a head bug.
+- **Uncertainty is reserved for QC/filtering and for alpha ERROR-PROPAGATION** (honest
+  confidence intervals: detection + per-spot intensity variance + fit), NOT as
+  regression weights. The model's per-spot σ still earns its place — just not in the
+  slope estimator. Our full config (Tier 1.ii) accordingly differs from the baselines
+  in detection + learned intensity, with uncertainty entering the CI, not the fit
+  weights.
 
 ## Synthetic test grid (the core experiments)
 

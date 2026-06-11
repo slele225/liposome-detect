@@ -66,13 +66,30 @@ scale, consistent with term 2):
     # r is the log-residual from term 2; sigma2 = exp(pred_log_var)
 
 Rewards honest large sigma where genuinely uncertain (dim/small spots), punishes
-false confidence. The per-spot sigma propagates DOWNSTREAM as the weight in the
-log-log sorting-curve fit (small uncertain spots contribute less to alpha) — this
-is the principled handling of "small liposomes are measured less precisely."
+false confidence.
+
+DOWNSTREAM USE of per-spot sigma (REVISED — see
+[experiments/2026-06-10_diagnostic-run/EXPERIMENT.md](../../experiments/2026-06-10_diagnostic-run/EXPERIMENT.md)):
+the per-spot uncertainty is calibrated and informative (predicted variance ranks
+spots by reliability; ~1.4 overconfidence ratio), and is used for **QC/filtering and
+for alpha ERROR PROPAGATION** (honest confidence intervals on alpha). It is **NOT**
+used as a weight in the sorting-curve fit. Per-spot uncertainty-WEIGHTED regression
+was tested (correct York EIV estimator) and is **contraindicated for this assay**:
+predicted variance is confounded with the regression x-axis (log-lipid, r ≈ +0.58),
+so weighting biases the slope. The alpha estimator is unweighted constant-λ Deming.
+(The original design intended sigma as the fit weight — "small uncertain spots
+contribute less to alpha" — but the variance/size-axis confound makes that biased;
+error-propagation is the correct role.)
 
 Variance-collapse guard: warm up with plain log-space MSE (r^2) for the first N
 epochs (default 5), THEN switch on the full NLL. Optionally beta-NLL variant.
 This is a LOSS schedule, separate from the LR warmup (linear->cosine).
+
+EARLY STOPPING (boundary-consistent metric): once NLL is on, the statically-weighted
+`val_total` is DISCONTINUOUS at the MSE→NLL switch (NLL terms go negative when the
+model is confident), so it is not a valid stopping criterion. Early stopping uses
+`val_intensity_logmse` (boundary-consistent — same meaning before/after the switch;
+`val_detection_f1` is the other consistent option). Never early-stop on `val_total`.
 
 ## Why small-liposome priority is SAFE here (the key invariant)
 
