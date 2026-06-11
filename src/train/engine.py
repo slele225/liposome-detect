@@ -121,9 +121,15 @@ def resolve_early_stopping(es_cfg, nll_warmup):
     maps it to its lower/higher-better ``mode`` via ``EARLY_STOP_METRICS``, and
     turns ``early_stop_burnin_epochs`` into an absolute ``burnin_until`` epoch
     (``nll_warmup + burnin``; ``-1`` = no burn-in). Raises on an unknown metric.
+
+    Default metric is ``val_intensity_logmse`` (boundary-CONSISTENT: same meaning
+    before/after the MSE->NLL switch). ``val_total`` stays selectable but is the
+    static yardstick that changes character at the boundary (diagnostic finding), so
+    it is no longer the default.
     """
     es_cfg = es_cfg or {}
-    metric = es_cfg.get('early_stop_metric', es_cfg.get('metric', 'val_total'))
+    metric = es_cfg.get('early_stop_metric',
+                        es_cfg.get('metric', 'val_intensity_logmse'))
     if metric not in EARLY_STOP_METRICS:
         raise ValueError(f"early_stop_metric {metric!r} not in "
                          f"{sorted(EARLY_STOP_METRICS)}")

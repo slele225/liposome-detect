@@ -22,11 +22,18 @@ def test_metric_directions_mapping():
     assert EARLY_STOP_METRICS['val_detection_f1'] == 'max'
 
 
-def test_resolve_defaults_to_val_total_min():
+def test_resolve_defaults_to_intensity_logmse_min():
+    # Default is the boundary-CONSISTENT intensity logmse (val_total is selectable
+    # but discontinuous at the NLL switch, so it is no longer the default).
     es = resolve_early_stopping({}, nll_warmup=5)
-    assert es['metric'] == 'val_total' and es['mode'] == 'min'
+    assert es['metric'] == 'val_intensity_logmse' and es['mode'] == 'min'
     assert es['burnin_until'] == -1            # no burn-in by default
     assert es['enabled'] is True
+
+
+def test_resolve_val_total_still_selectable():
+    es = resolve_early_stopping({'early_stop_metric': 'val_total'}, nll_warmup=5)
+    assert es['metric'] == 'val_total' and es['mode'] == 'min'
 
 
 def test_resolve_selects_metric_and_mode():
