@@ -1,0 +1,38 @@
+# Diameter-eval benchmark set — EMPHASIS sizing (stresses the small/high-curvature
+# tail, the candidate-moat regime). per_spot_random alpha (alpha-agnostic, matches
+# training); alpha is NOT used by the detection / intensity / representativeness
+# metrics this set feeds — only the GT diameters + fluxes are. synth_benchmark.py
+# runs both adapters (ours, classical) through the shared benchmark_core on this set.
+name: bench_emphasis
+n_images: 300
+image_size: 256
+base_seed: 21000
+
+calibrations:
+  - experiments/2026-06-03_per-sample-calibration/runs/20nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/50nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/100nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/300nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/25nM_endophilin/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/300nM_endophilin/calibration_results.json
+widen_frac: 0.3
+
+alpha_mode: per_spot_random
+alpha_range: [0.5, 2.0]
+mixed_global_prob: 0.5
+
+size_mode: emphasis
+size:
+  d_min: 40.0
+  d_max: 300.0
+  n_bins: 256
+  size_emphasis: 1.0
+
+sampling:
+  protein_brightness_range: [2500.0, 7500.0]
+  noise_split_range: [0.2, 5.0]
+  optical_bg_lipid_range: [0.0, 7.0]
+  eccentricity_range: [0.9, 1.1]
+
+smoke:
+  n_images: 8

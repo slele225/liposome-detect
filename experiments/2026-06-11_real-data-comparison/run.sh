@@ -48,7 +48,26 @@ $PY "$SCRIPT_DIR/firm_calibration.py" "${NW_ARG[@]}"
 echo "[real-cmp] STEP 3/4 — real-image alpha (EGFP-anchored go/no-go) ..."
 $PY "$SCRIPT_DIR/real_alpha.py"
 
-echo "[real-cmp] STEP 4/4 — DLS consistency (second anchor) ..."
+echo "[real-cmp] STEP 4/7 — DLS consistency (second anchor) ..."
 $PY "$SCRIPT_DIR/dls_consistency.py"
 
+# ----- cross-method benchmark: detection isolated from the fit ------------- #
+echo "[real-cmp] STEP 5/7 — synthetic cross-method benchmark (ours + classical) ..."
+$PY "$SCRIPT_DIR/synth_benchmark.py" "${NW_ARG[@]}"
+
+echo "[real-cmp] STEP 6/7 — export synthetic images + GT for external tools ..."
+$PY "$SCRIPT_DIR/export_for_external.py"
+
+echo "[real-cmp] STEP 7/7 — real-data cross-method alpha (ours + classical) ..."
+$PY "$SCRIPT_DIR/real_benchmark.py"
+
+echo "=================================================================="
 echo "[real-cmp] complete. Tables + plots are in $SCRIPT_DIR"
+echo "[real-cmp] EXTERNAL TOOLS (cme-analysis / SpotMAX, run on YOUR machine):"
+echo "  inputs : $REPO_ROOT/datasets/external_export/<set>/tiffs/*.tif"
+echo "           + ground_truth.csv + README_export.txt (layout + GT schema)"
+echo "  bring back: per-image  image_id,x,y[,score]  CSVs, then re-run:"
+echo "    synth: feed via src/eval/adapters.read_detection_csv (external_csv adapter)"
+echo "    real : real_benchmark.py --external-csv-dir <dir-with-<sample>.csv>"
+echo "  -> identical shared photometry + EIV+calibration fit + GT eval as ours/classical"
+echo "=================================================================="

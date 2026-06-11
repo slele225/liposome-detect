@@ -1,0 +1,37 @@
+# Diameter-eval benchmark set — DLS sizing (the REALISTIC size regime, per
+# docs/decisions benchmark-design: the final cross-method benchmark uses the
+# DLS-realistic distribution, not emphasis). Diameters drawn from the 20nM_EGFP DLS
+# NUMBER distribution via io.parse_dls (size_mode=dls). per_spot_random alpha
+# (alpha-agnostic). Feeds synth_benchmark.py the same way as bench_emphasis.
+name: bench_dls
+n_images: 300
+image_size: 256
+base_seed: 22000
+
+calibrations:
+  - experiments/2026-06-03_per-sample-calibration/runs/20nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/50nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/100nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/300nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/25nM_endophilin/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/300nM_endophilin/calibration_results.json
+widen_frac: 0.3
+
+alpha_mode: per_spot_random
+alpha_range: [0.5, 2.0]
+mixed_global_prob: 0.5
+
+size_mode: dls
+dls:
+  path: data/20nM_EGFP/batch1_dls_corrected.xlsx
+  weighting: number
+  max_diameter_nm: 500
+
+sampling:
+  protein_brightness_range: [2500.0, 7500.0]
+  noise_split_range: [0.2, 5.0]
+  optical_bg_lipid_range: [0.0, 7.0]
+  eccentricity_range: [0.9, 1.1]
+
+smoke:
+  n_images: 8
