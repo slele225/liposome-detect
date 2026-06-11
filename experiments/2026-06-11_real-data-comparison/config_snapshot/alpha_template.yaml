@@ -1,0 +1,45 @@
+# Fixed-alpha synthetic test-set TEMPLATE for the firmed-up calibration curve.
+#
+# firm_calibration.py renders one config per alpha in
+# {0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.2} from this template, overriding
+# `name`, `alpha_range` (single point) and `base_seed`. It is a strict extension
+# of configs/generator/alpha_2p00.yaml (the 4-point seed used the same sampling),
+# so the new curve is comparable to the seed: same calibrations, same emphasis
+# sizing, same sampling ranges, same `global_coherent` single-alpha mode.
+#
+# Generation is CPU + all workers; the detector + recover_alpha (EIV) pass that
+# turns these into (recovered -> true) anchor points runs on GPU. See
+# experiments/2026-06-11_real-data-comparison/EXPERIMENT.md.
+name: real_cmp_alpha_TEMPLATE
+n_images: 300
+image_size: 256
+base_seed: 11000
+
+calibrations:
+  - experiments/2026-06-03_per-sample-calibration/runs/20nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/50nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/100nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/300nM_EGFP/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/25nM_endophilin/calibration_results.json
+  - experiments/2026-06-03_per-sample-calibration/runs/300nM_endophilin/calibration_results.json
+widen_frac: 0.3
+
+alpha_mode: global_coherent
+alpha_range: [2.00, 2.00]      # overridden per-alpha by firm_calibration.py
+mixed_global_prob: 0.5
+
+size_mode: emphasis
+size:
+  d_min: 40.0
+  d_max: 300.0
+  n_bins: 256
+  size_emphasis: 1.0
+
+sampling:
+  protein_brightness_range: [2500.0, 7500.0]
+  noise_split_range: [0.2, 5.0]
+  optical_bg_lipid_range: [0.0, 7.0]
+  eccentricity_range: [0.9, 1.1]
+
+smoke:
+  n_images: 8
