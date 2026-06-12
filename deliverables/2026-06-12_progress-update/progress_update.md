@@ -107,9 +107,11 @@ concentrates on small liposomes.
 1. **Gain-correct the lipid channel** so EGFP reads α = 2 at every concentration,
    then re-run the real samples for the corrected final numbers.
 2. **Cross-method baselines** to position this against existing tools:
-   *cme-analysis* (scripting) and *SpotMAX* (running, still tuning its
-   detection). This makes the "we see the small liposomes" claim a measured
-   comparison rather than an in-house one.
+   *cme-analysis*, *Spotiflow*, and *SpotMAX*. This makes the "we see the small
+   liposomes" claim a measured comparison rather than an in-house one. See
+   [baselines.md](baselines.md) for the three methods, how we run each as a
+   detection front-end through our own photometry, the comparison tests, and a
+   preliminary Spotiflow result.
 3. Report the corrected endophilin-vs-EGFP α with those baselines alongside.
 
 ---
