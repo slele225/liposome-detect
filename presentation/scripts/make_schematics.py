@@ -281,8 +281,8 @@ def slic_measurement():
     ax.plot([px0 + 0.35, px0 + pw - 0.35], [py0 + ph - 0.45, py0 + 0.55],
             color=C.vermillion, lw=4, zorder=3)
     # annotation in the empty top-right corner (line runs top-left→bottom-right)
-    ax.text(px0 + pw - 0.2, py0 + ph - 0.3, "slope = α", ha="right", va="top",
-            fontsize=20, color=C.vermillion, fontweight="bold")
+    ax.text(px0 + pw - 0.2, py0 + ph - 0.3, "slope = α − 2", ha="right",
+            va="top", fontsize=20, color=C.vermillion, fontweight="bold")
     ax.text(px0 + pw / 2, py0 - 0.32, "liposome size  (log)", ha="center",
             va="top", fontsize=13, color=C.grey)
     ax.text(px0 - 0.28, py0 + ph / 2, "protein density  (log)", ha="center",
