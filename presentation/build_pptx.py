@@ -52,6 +52,16 @@ def add_picture(slide, img_path, bl, bt, bw, bh):
     l, t, w, h = fit(img_path, bl, bt, bw, bh)
     slide.shapes.add_picture(img_path, Inches(l), Inches(t),
                              Inches(w), Inches(h))
+    return l, t, w, h
+
+
+def add_picture_wcentered(slide, img_path, cx, top, target_w):
+    """Place an image sized to target_w, horizontally centered on cx."""
+    iw, ih = Image.open(img_path).size
+    w = target_w
+    h = target_w * ih / iw
+    slide.shapes.add_picture(img_path, Inches(cx - w / 2.0), Inches(top),
+                             Inches(w), Inches(h))
 
 
 def add_text(slide, text, l, t, w, h, size, color, bold=False,
@@ -135,12 +145,13 @@ add_picture(s, os.path.join(FIG, "sorting_curve_endophilin.png"),
             LEFT + half + 0.4, ftop, half, BOT_FULL - ftop)
 
 # ====================================================================
-# 3. NEW — HOW THE SLiC MEASUREMENT WORKS  (real-data assay)
+# 3. NEW — HOW THE SLiC MEASUREMENT WORKS  (real-data flow, known α)
+# image → detections → linear plot → log-log plot (slope = α − 2)
 # ====================================================================
 s = new(3)
 title(s, "How the SLiC measurement works")
-add_picture(s, os.path.join(ASSET, "slic_measurement.png"),
-            LEFT, TOP + 0.3, RIGHT_W, BOT_FULL - TOP - 0.6)
+add_picture(s, os.path.join(ASSET, "slic_flow.png"),
+            LEFT, TOP, RIGHT_W, BOT_FULL - TOP)
 
 # ====================================================================
 # 4. TRAIN ON A CALIBRATED SIMULATOR
@@ -151,12 +162,41 @@ add_picture(s, os.path.join(FIG, "real_vs_sim_tiles.png"),
             LEFT, TOP, RIGHT_W, BOT_FULL - TOP)
 
 # ====================================================================
-# 5. NEW — THE FORWARD MODEL  (physics chain that generates an image)
+# 5. NEW — THE FORWARD MODEL  (flowchart base + LaTeX equation objects)
+# Equations are SEPARATE picture objects placed under their boxes so the
+# presenter can add one-by-one "Appear" animations by hand (build-up).
 # ====================================================================
 s = new(5)
 title(s, "The forward model")
-add_picture(s, os.path.join(ASSET, "forward_model.png"),
-            LEFT, TOP + 0.3, RIGHT_W, BOT_FULL - TOP - 0.6)
+fl_l, fl_t, fl_w, fl_h = add_picture(
+    s, os.path.join(ASSET, "forward_model.png"),
+    LEFT, TOP + 0.1, RIGHT_W, BOT_FULL - TOP - 0.2)
+
+# map forward_model.png figure coords (xlim 0..16.5, ylim 0..5.2) -> slide in
+FW_X, FW_Y = 16.5, 5.2
+
+
+def fx2slide(fx):
+    return fl_l + (fx / FW_X) * fl_w
+
+
+def fy2slide(fy):
+    return fl_t + (1.0 - fy / FW_Y) * fl_h
+
+
+box_bottom = fy2slide(1.875)            # bottom edge of the flowchart boxes
+eq_top = box_bottom + 0.12
+# (box-center fig_x, equation png, target width)  — left→right build-up order.
+# fig_x values are the flowchart box centers (assign 4.92, blur 7.89,
+# detector 11.06); widths chosen so the three equations don't overlap.
+equations = [
+    (4.92, "eq_assign.png", 2.5),       # hero (assign intensities)
+    (7.89, "eq_blur.png", 1.5),         # optical blur
+    (11.06, "eq_detector.png", 3.0),    # detector physics
+]
+for cfx, fname, tw in equations:
+    add_picture_wcentered(s, os.path.join(ASSET, fname),
+                          fx2slide(cfx), eq_top, tw)
 
 # ====================================================================
 # 6. CALIBRATION: MATCH IMAGE STATISTICS  (title only)
