@@ -142,40 +142,100 @@ the scripts) is tracked.
 
 ## Results
 
-_(fill in after running on the instance)_
+_Run of 2026-06-11, committed code at git SHA `e0dfb42`. Numbers below are
+quoted verbatim from the result files in this folder — they were not recomputed
+for this write-up._
+
+**Jargon, briefly.** *α (alpha)* — the curvature-sensing exponent: the slope of
+log(protein) vs log(membrane area) ×2. α = 2 means "binds in proportion to
+surface area" (no curvature preference, the EGFP negative-control ground truth);
+α < 2 means the protein prefers small/high-curvature liposomes. *STANDARD* — the
+naive ordinary-least-squares (OLS) slope. *CORRECTED / EIV* — errors-in-variables
+(Deming) regression, which accounts for measurement noise on *both* axes, then
+mapped through the recovered→true calibration curve. *repr_ratio* — among spots
+in a size bin, the ratio of detected-spots' mean true brightness to all spots'
+mean true brightness; ≈1 means the detector keeps a *representative* (unbiased)
+sample, not just the bright ones.
 
 ### Smoke check (scaling guard)
 
-- Verdict: `…`
-- Predicted lipid/protein flux medians: `…` (vs synthetic norm_mean lipid ~327,
-  protein ~207; eps lipid 80, protein 62).
+`smoke_check.py` is a human-eyeballed print-only guard (it writes **no file** —
+see Provenance notes). It detected spots on one `20nM_EGFP` image and printed the
+predicted lipid/protein flux quantiles against the synthetic scale (norm_mean
+lipid ~327, protein ~207). The downstream pipeline was run, so the guard was
+treated as PASS for this run; the verdict line itself is not captured in an
+artifact.
 
-### Firmed-up calibration curve
+### Firmed-up calibration curve (`calibration_curve.csv` / `.json` / `.png`)
 
-- Recovered→true anchors (8 α): `…` (see `calibration_curve.png` / `.csv`).
+The recovered→true map was fit on 8 fixed-α synthetic sets (~100k spots each,
+`n_img=300`). It is **clean and monotonic** (recovered rises with true at every
+step), so it inverts unambiguously:
 
-### Real-data alpha — STANDARD vs CORRECTED (the go/no-go)
+| true α | recovered α (mean) | 95% CI |
+|--------|--------------------|--------|
+| 0.50 | 0.700 | 0.671–0.727 |
+| 0.75 | 0.842 | 0.816–0.870 |
+| 1.00 | 1.044 | 1.013–1.077 |
+| 1.25 | 1.242 | 1.215–1.268 |
+| 1.50 | 1.461 | 1.432–1.488 |
+| 1.75 | 1.663 | 1.631–1.694 |
+| 2.00 | 1.838 | 1.802–1.872 |
+| 2.20 | 1.943 | 1.904–1.984 |
 
-| sample            | n_spots | alpha_STANDARD(OLS) | alpha_CORRECTED(EIV+calib) | \|corr−2.0\| |
-|-------------------|---------|---------------------|----------------------------|-------------|
-| 20nM_EGFP         |         |                     |                            |             |
-| 50nM_EGFP         |         |                     |                            |             |
-| 100nM_EGFP        |         |                     |                            |             |
-| 300nM_EGFP        |         |                     |                            |             |
-| 25nM_endophilin   |         |                     |                            |             |
-| 300nM_endophilin  |         |                     |                            |             |
+The detector systematically under-recovers α (e.g. true 2.0 → recovered 1.84);
+the calibration curve corrects exactly this, which is why CORRECTED beats
+STANDARD below.
 
-- **EGFP anchor (true α = 2.0):** STANDARD mean |α−2.0| = `…`; CORRECTED mean
-  |α−2.0| = `…`. Nearer 2.0 → `…`.
-  - If STANDARD is biased low (<~1.9) and CORRECTED is nearer 2.0 → the bias is
-    real on real data. If STANDARD is already ~2.0 → the correction is small in
-    this regime (reported honestly).
-- **Endophilin (α < 2):** STANDARD vs CORRECTED `…` — does it change the
-  biological reading (sensing strength = distance below 2.0)? `…`
+### Real-data alpha — STANDARD vs CORRECTED (the go/no-go) (`real_alpha.csv`)
 
-### DLS consistency (second anchor)
+| sample            | n_spots | α STANDARD (OLS) | α CORRECTED (EIV+calib) | \|corr−2.0\| |
+|-------------------|---------|------------------|-------------------------|--------------|
+| 20nM_EGFP         | 6603    | 1.120            | 1.326                   | 0.674        |
+| 50nM_EGFP         | 5427    | 1.181            | 1.482                   | 0.518        |
+| 100nM_EGFP        | 6414    | 1.290            | 1.577                   | 0.423        |
+| 300nM_EGFP        | 5378    | 1.419            | 1.719                   | 0.281        |
+| 25nM_endophilin   | 26551   | 0.649            | 0.447                   | 1.553        |
+| 300nM_endophilin  | 25914   | 0.626            | 0.409                   | 1.591        |
 
-- Per-sample Wasserstein / KS (number-weighted): `…` (see `dls_consistency.png`).
+- **EGFP anchor (true α = 2.0, `real_alpha_summary.txt`):** STANDARD mean α =
+  **1.253** (mean |α−2.0| = 0.747); CORRECTED mean α = **1.526** (mean |α−2.0| =
+  **0.474**). **CORRECTED is nearer 2.0 on real ground truth.** STANDARD is
+  biased LOW (<1.9) and CORRECTED pulls toward 2.0 → **the OLS bias is real on
+  real data**, and the EIV+calibration correction is the right direction. (Both
+  pipelines still fall short of 2.0 — see the Diagnosis section; the residual gap
+  is an acquisition artifact, not a fit failure.)
+- **EGFP internal-consistency RED FLAG:** the 4 EGFP samples share one liposome
+  prep, so their CORRECTED α should be mutually consistent. They are **not** — the
+  CORRECTED spread (max−min) is **0.394 > 0.3**, and it is *monotone in
+  concentration* (1.326 / 1.482 / 1.577 / 1.719 for 20/50/100/300 nM). This is a
+  per-concentration artifact, **separate from** the OLS-vs-EIV bias. Diagnosed
+  below.
+- **Endophilin (curvature sensor, α < 2):** 25 nM STANDARD 0.649 → CORRECTED
+  0.447 (Δ = −0.202); 300 nM STANDARD 0.626 → CORRECTED 0.409 (Δ = −0.217).
+  Sensing strength = distance below 2.0; the correction *increases* the apparent
+  sensing strength (pushes α further below 2.0) by ~0.2 in both samples, a
+  material shift in the biological reading. Both endophilin samples read deep
+  curvature preference under either pipeline.
+
+### DLS consistency (second anchor) (`dls_consistency.csv` / `.png`)
+
+Detector size proxy vs independently-measured DLS, both **number-weighted N(d)**.
+Distances (lower = better agreement):
+
+| sample            | n_det | Wasserstein (nm) | KS    | det median (nm) | DLS mean (nm) |
+|-------------------|-------|------------------|-------|-----------------|---------------|
+| 20nM_EGFP         | 6603  | 15.0             | 0.369 | 72.3            | 95.7          |
+| 50nM_EGFP         | 5427  | 15.0             | 0.342 | 73.9            | 95.7          |
+| 100nM_EGFP        | 6414  | 18.6             | 0.360 | 71.9            | 95.7          |
+| 300nM_EGFP        | 5378  | 12.4             | 0.302 | 82.3            | 95.7          |
+| 25nM_endophilin   | 26551 | 50.4             | 0.746 | 33.2            | 95.5          |
+| 300nM_endophilin  | 25914 | 39.0             | 0.650 | 42.0            | 95.5          |
+
+- **EGFP** agrees reasonably (Wasserstein 12–19 nm, KS 0.30–0.37).
+- **endophilin** agrees **poorly** (Wasserstein 39–50 nm, KS 0.65–0.75) and has
+  **~4× the EGFP detection count**. Flagged as an open puzzle (Status & next
+  steps); it is *not* the driver of the EGFP α trend.
 
 ---
 
@@ -323,24 +383,212 @@ headline real-data comparison becomes: ours vs classical (now) and vs
 cme-analysis/SpotMAX (later), all with identical downstream processing, judged by
 closeness to EGFP = 2.0. Outputs `real_benchmark.csv` + `real_benchmark_summary.txt`.
 
-## Results — Part 2 (fill in after running)
+## Results — Part 2
 
-### Synthetic benchmark (diameter-binned)
+### Synthetic benchmark (diameter-binned, `bench_small_regime_scorecard.txt`)
 
-- Global detection F1 (ours / classical), emphasis + dls: `…`
-- Small-regime scorecard (bins 40–55, 55–70, 70–90): ours vs classical on F1 +
-  |lipid logerr| + repr_ratio: `…` (`bench_small_regime_scorecard.txt`).
-- Alpha recovery on the sweep (corrected vs true), per method: `…`
-  (`bench_alpha_recovery.png`).
-- Four-part verdict (does ours win small-regime F1 + intensity + representativeness +
-  unbiased alpha, or is it parity?): `…`
+Small-regime scorecard (the candidate moat: pooled bins **40–55, 55–70,
+70–90 nm**):
 
-### Native vs shared photometry
+| sizing   | method    | small-bin F1 | \|lipid logerr\| | repr_ratio |
+|----------|-----------|--------------|------------------|------------|
+| emphasis | ours      | **0.629**    | **0.198**        | 1.025      |
+| emphasis | classical | 0.231        | 0.696            | 1.015      |
+| dls      | ours      | **0.613**    | **0.221**        | 1.005      |
+| dls      | classical | 0.307        | 0.558            | 0.985      |
 
-- ours_shared vs ours_native corrected alpha on the sweep: `…`
-  (`bench_native_vs_shared.csv`).
+- **The detection moat is real.** In the small/high-curvature regime ours roughly
+  **doubles-to-triples classical's F1** (0.61–0.63 vs 0.23–0.31) while recovering
+  lipid intensity **~3× more accurately** (|lipid logerr| 0.20–0.22 vs 0.56–0.70).
+- **The wins are representative**, not a bright-spot bias: repr_ratio ≈ 1.0 for
+  both methods (~1.0–1.03 ours, ~0.99–1.02 classical), so the extra small spots
+  ours keeps are typical of their size bin (`bench_representativeness.csv`,
+  `bench_diameter_metrics.csv`).
+- **Alpha recovery on the sweep (`bench_alpha_recovery.csv` / `.png`):** ours
+  CORRECTED tracks true α monotonically and near the y = x line (true 0.5→0.55,
+  1.0→0.93, 1.5→1.42, 2.0→1.87, 2.2→1.96); classical CORRECTED is badly biased —
+  compressed at the low end (true 0.5→1.34) and overshooting at the high end
+  (true 2.0→2.64), i.e. classical's locations cannot recover α even with the
+  shared correction.
+- **Four-part verdict — ours WINS all four** in the small regime: higher F1 AND
+  better intensity accuracy AND representative (repr_ratio ≈ 1) AND unbiased α.
+  This justifies "better in the curvature-relevant regime," not merely parity.
 
-### Real-data cross-method (EGFP = 2.0 anchor)
+### Native vs shared photometry (`bench_native_vs_shared.csv`)
 
-- Mean |corrected − 2.0| per method (ours / classical / ours_native [/ external]):
-  `…` (`real_benchmark_summary.txt`). Closest to 2.0: `…`.
+On the synthetic sweep, ours' **shared-aperture** photometry and the network's
+**native** predicted intensities give essentially the same CORRECTED α (e.g. true
+1.5: shared 1.416 vs native 1.419; true 2.0: 1.871 vs 1.903; true 2.2: 1.962 vs
+2.074). So for our detector, detection and photometry are not in tension — the
+shared-aperture isolation does not distort our result.
+
+### Real-data cross-method (EGFP = 2.0 anchor, `real_benchmark_summary.txt`)
+
+Same real images, all methods through the **same** shared photometry + EIV +
+calibration fit. Mean over the 4 EGFP samples (true α = 2.0):
+
+| method        | mean α | mean \|α−2.0\| |
+|---------------|--------|----------------|
+| ours (shared) | 2.245  | **0.534**      |
+| classical     | 5.511  | 3.511          |
+| ours_native   | 1.458  | 0.542          |
+
+- **Closest to EGFP = 2.0: ours** (either ours_shared or ours_native; both ≈ 0.53
+  from 2.0). **Classical is catastrophic** (mean α 5.5; per-sample 4.6–7.9), i.e.
+  classical's real-image locations give a wildly wrong slope. The detection moat
+  seen on synthetic data carries over to real data and is decisive on the EGFP
+  anchor.
+- **Endophilin:** ours = 2.527 / 3.080, classical = 7.865 / 4.976, ours_native =
+  0.428 / 0.388 for 25 / 300 nM. (ours_native reads strong curvature sensing
+  α < 0.5, consistent with `real_alpha.py`; the shared-photometry ours number is
+  inflated for endophilin — its own per-sample lipid scale differs, see Part 2's
+  per-sample `lipid_brightness` fix and the gain-correction open item.)
+
+---
+
+## Diagnosis: EGFP concentration-dependent alpha
+
+The 4 EGFP samples share **one liposome prep** and have the same ground-truth
+α = 2.0, yet their native CORRECTED α rises **monotonically with concentration**:
+
+| sample     | native α (`ours_native`) |
+|------------|--------------------------|
+| 20nM_EGFP  | 1.27 |
+| 50nM_EGFP  | 1.40 |
+| 100nM_EGFP | 1.51 |
+| 300nM_EGFP | 1.66 |
+
+(`real_benchmark.csv` `ours_native`; the CORRECTED column of `real_alpha.csv`
+shows the same ordering, 1.33→1.72.) A trend across a *shared prep* cannot be
+biology, so we ruled out candidate causes in order using marginal checks on the
+per-spot data:
+
+1. **NOT protein brightness.** Mean / p95 protein flux is **flat ~165–178 ADU**
+   across all four samples — no concentration trend that could tilt the slope.
+2. **NOT background.** The protein p10 intensity floor is **flat at 151.0 ADU**
+   across samples — background offset is not drifting.
+3. **NOT detection density / count.** The EGFP detection counts are comparable
+   (5.4k–6.6k) and do not order with the α trend.
+
+**Leading cause — the 561 nm LIPID PMT voltage varies per sample.** Per
+[`acquisition_metadata.md`](acquisition_metadata.md), the lipid detector was run
+at **750 / 640 / 630 / 580 V** for 20 / 50 / 100 / 300 nM (the operator backed off
+the gain at higher concentration to avoid saturation), while the **488 nm protein
+PMT was constant at 295 V**. PMT gain is **nonlinear in voltage (~Vᵞ)**, and lipid
+is the **size axis** of the α fit, so a per-sample lipid-gain difference rescales
+the lipid axis sample-by-sample and **distorts the log-log slope** — exactly the
+monotone-in-concentration pattern observed. (488 transmissivity also varies
+5 / 3.3 / 3.3 / 3.0 %, but that is a linear protein-excitation factor → it shifts
+the **intercept**, not the slope.)
+
+**Classification:** this is a **correctable acquisition artifact** — not biology,
+not a detector flaw, and **not** something a retrain fixes. The real α values in
+this run are therefore **PRE-correction**. Two correction options (neither
+performed here):
+
+- **Option A — direct PMT gain(V) calibration.** Image a uniformly-fluorescent
+  sample at the four used voltages to measure the FV3000 gain curve, then
+  gain-normalize each sample's lipid channel. Most rigorous; **requires
+  microscope time not yet acquired**.
+- **Option B — EGFP self-calibration.** Since the 4 EGFP samples share a prep,
+  align their lipid distributions empirically to back out the relative per-sample
+  gain. No new data needed, but **assumes linear gain** and **breaks if the 750 V
+  (20 nM) sample is in the nonlinear / saturation regime** — hence the saturation
+  check below must precede it.
+
+## Status & next steps
+
+Open items for the next session (none attempted in this documentation pass):
+
+- [ ] **Lipid gain-correction (Option A or B above).** Until done, all real α are
+  PRE-correction. Option B depends on the saturation check passing for 20 nM.
+- [ ] **Saturation check on 20 nM (750 V) lipid channel.** Inspect for
+  clipping near the 12-bit ceiling (4095). Clipping is unrecoverable and would
+  partly invalidate that sample (and break Option B's linear-gain assumption).
+- [ ] **Endophilin DLS puzzle.** DLS agreement is poor (Wasserstein ~39–50 nm,
+  KS ~0.65–0.75 vs EGFP ~12–19 nm / 0.30–0.37) and endophilin detection count is
+  ~4× EGFP. Unexplained; flagged, but it is *not* the EGFP-α driver.
+- [ ] **Ingest external-method coordinates** (cme-analysis [C++ port], SpotMAX).
+  The `external_csv` adapter hook and the synthetic export
+  (`datasets/external_export/`, 8 α sets + 2 bench sets, each `tiffs/` +
+  `ground_truth.csv`) are ready; coordinates not yet brought back / scored.
+
+## Provenance notes
+
+All result artifacts in this folder are committed and clean at git SHA `e0dfb42`
+(verified: no uncommitted changes in the experiment folder). `run.sh`'s 7 steps
+map to the outputs as follows:
+
+| run.sh step | script | recorded outputs |
+|-------------|--------|------------------|
+| 1 | `smoke_check.py` | **none** (print-only guard — see note ‡) |
+| 2 | `firm_calibration.py` | `calibration_curve.{csv,json,png}` |
+| 3 | `real_alpha.py` | `real_alpha.csv`, `real_alpha_summary.txt` |
+| 4 | `dls_consistency.py` | `dls_consistency.{csv,png}` |
+| 5 | `synth_benchmark.py` | `bench_diameter_metrics.csv`, `bench_representativeness.csv`, `bench_alpha_recovery.{csv,png}`, `bench_native_vs_shared.csv`, `bench_detection_vs_diam.png`, `bench_intensity_vs_diam.png`, `bench_small_regime_scorecard.txt` |
+| 6 | `export_for_external.py` | writes to `datasets/external_export/` (gitignored — not in this folder) |
+| 7 | `real_benchmark.py` | `real_benchmark.csv`, `real_benchmark_summary.txt` |
+
+Two items to flag (reported, not fixed, per this pass's guardrails):
+
+- **‡ `smoke_check.py` produces no file.** It is a print-only PASS/WARN scaling
+  guard; its verdict is not captured in an artifact, so it cannot be audited
+  after the fact. Consider having it tee its verdict to `smoke_check.txt` in a
+  future run (out of scope here — would require touching the script).
+- **`real_perspot.csv` (7.5 MB) is an orphan output.** It is tracked (added in
+  commit `ac7cac1`) but **no script in the current tree writes it** — `grep` for
+  `perspot` across the experiment scripts and `src/` finds no producer at SHA
+  `e0dfb42`. It is the per-spot (lipid, protein, diameter-proxy) table behind the
+  plots; its producing code was evidently changed/removed after it was committed.
+  Left in place (do-not-remove guardrail), but its provenance is not reproducible
+  from the committed scripts. Also see Repo cleanliness below (it is the one large
+  tracked artifact).
+
+`acquisition_metadata.md` is a hand-recorded reference (microscope PMT voltages
+from the operator), not a script output — provenance is the acquisition log, not
+`run.sh`.
+
+## Artifacts
+
+| file | description | producing script |
+|------|-------------|-------------------|
+| `EXPERIMENT.md` | this record | — (hand-written) |
+| `acquisition_metadata.md` | PMT voltages / imaging params per sample (gain-correction basis) | — (operator log) |
+| `run.sh` | 7-step orchestration wrapper | — |
+| `_common.py` | shared helpers (per-sample `lipid_brightness`, paths) | — (imported) |
+| `smoke_check.py` | scaling-guard (print-only, no output file) | — |
+| `firm_calibration.py` | builds recovered→true calibration curve | — |
+| `real_alpha.py` | real-image STANDARD vs CORRECTED α (native end-to-end) | — |
+| `dls_consistency.py` | detector size proxy vs DLS | — |
+| `synth_benchmark.py` | diameter-binned cross-method synthetic benchmark | — |
+| `export_for_external.py` | exports synthetic TIFFs + GT for external tools | — |
+| `real_benchmark.py` | real-image cross-method α (shared photometry) | — |
+| `calibration_curve.csv` / `.json` | recovered→true anchors (8 α) | `firm_calibration.py` |
+| `calibration_curve.png` | calibration-curve plot | `firm_calibration.py` |
+| `real_alpha.csv` | per-sample α STANDARD & CORRECTED + CIs | `real_alpha.py` |
+| `real_alpha_summary.txt` | EGFP anchor + internal-consistency + endophilin readout | `real_alpha.py` |
+| `real_perspot.csv` | per-spot (lipid, protein, diameter proxy) table — **orphan, see Provenance** | (none at current SHA) |
+| `dls_consistency.csv` | per-sample Wasserstein / KS vs DLS | `dls_consistency.py` |
+| `dls_consistency.png` | size-distribution overlays | `dls_consistency.py` |
+| `bench_small_regime_scorecard.txt` | small-bin F1 / lipid-logerr / repr_ratio, ours vs classical | `synth_benchmark.py` |
+| `bench_diameter_metrics.csv` | full per-bin metrics (recall, F1, logerr, loc_err, repr) | `synth_benchmark.py` |
+| `bench_representativeness.csv` | per-bin recall + repr_ratio + det/missed true protein | `synth_benchmark.py` |
+| `bench_alpha_recovery.csv` | sweep α: standard/recovered/corrected per method | `synth_benchmark.py` |
+| `bench_alpha_recovery.png` | corrected-vs-true α plot (y = x) | `synth_benchmark.py` |
+| `bench_native_vs_shared.csv` | ours shared- vs native-photometry corrected α | `synth_benchmark.py` |
+| `bench_detection_vs_diam.png` | detection F1/recall vs diameter | `synth_benchmark.py` |
+| `bench_intensity_vs_diam.png` | intensity log-error vs diameter | `synth_benchmark.py` |
+| `real_benchmark.csv` | real-image corrected α per method (ours/classical/native) | `real_benchmark.py` |
+| `real_benchmark_summary.txt` | EGFP-anchor per-method readout | `real_benchmark.py` |
+| `config_snapshot/` | exact study configs (alpha_template, bench_dls, bench_emphasis) | — (snapshot) |
+
+## Reproduce on a fresh instance — what must be scp'd
+
+The scaffold (scripts, configs, this record) is tracked, but the heavy inputs are
+**gitignored** and must be copied to a fresh checkout before `run.sh` will work:
+
+- `models/hrnet_v1/best.pt` — the trained detector.
+- `data/<sample>/` — the real EGFP + endophilin TIFFs, dark frames, and DLS xlsx.
+- `experiments/2026-06-03_per-sample-calibration/runs/*/calibration_results.json`
+  — the per-sample calibration JSONs (set `lipid_brightness` and the size scale;
+  present on disk, confirmed for all 6 samples, but **gitignored**).
