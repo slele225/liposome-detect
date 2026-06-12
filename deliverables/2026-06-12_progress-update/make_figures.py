@@ -22,27 +22,57 @@ DATA = os.path.join(HERE, "figure_data")
 FIGS = os.path.join(HERE, "figures")
 os.makedirs(FIGS, exist_ok=True)
 
-# ---- tasteful, colorblind-friendly styling -------------------------------
+# ---- house style: clean, professional, colorblind-safe -------------------
 plt.rcParams.update({
-    "figure.dpi": 130,
-    "savefig.dpi": 150,
-    "font.size": 12,
-    "axes.titlesize": 13,
+    # crisp when projected or zoomed
+    "figure.dpi": 120,
+    "savefig.dpi": 300,
+    "savefig.facecolor": "white",
+    "figure.facecolor": "white",
+    "axes.facecolor": "white",
+    # consistent professional sans-serif everywhere
+    "font.family": "sans-serif",
+    "font.sans-serif": ["DejaVu Sans", "Arial", "Helvetica"],
+    "font.size": 13,
+    "axes.titlesize": 14,
     "axes.titleweight": "bold",
-    "axes.labelsize": 12,
+    "axes.titlepad": 10,
+    "axes.labelsize": 13,
+    "axes.labelpad": 6,
+    "xtick.labelsize": 11.5,
+    "ytick.labelsize": 11.5,
+    "figure.titlesize": 16,
+    "figure.titleweight": "bold",
+    # thin axes, no top/right spines
     "axes.spines.top": False,
     "axes.spines.right": False,
+    "axes.linewidth": 1.0,
+    "axes.edgecolor": "#444444",
+    "xtick.color": "#444444",
+    "ytick.color": "#444444",
+    "axes.labelcolor": "#222222",
+    "text.color": "#222222",
+    # light, subtle grid behind the data
+    "axes.axisbelow": True,
     "axes.grid": True,
-    "grid.alpha": 0.25,
+    "grid.color": "#B8B8B8",
+    "grid.linewidth": 0.6,
+    "grid.alpha": 0.35,
     "legend.frameon": False,
+    "legend.fontsize": 12,
+    "lines.solid_capstyle": "round",
 })
 
-# Okabe-Ito colorblind-safe palette
-C_OURS = "#0072B2"        # blue
-C_CLASSICAL = "#D55E00"   # vermillion
-C_EGFP = "#009E73"        # green
-C_ENDO = "#CC79A7"        # purple
-C_TRUTH = "#555555"       # grey reference lines
+# Okabe-Ito colorblind-safe palette — colors are consistent across all figures:
+# "our method" is always blue, "standard method" always vermillion,
+# EGFP always teal-green, endophilin always purple.
+C_OURS = "#0072B2"        # blue        — our method
+C_CLASSICAL = "#D55E00"   # vermillion  — standard method
+C_EGFP = "#009E73"        # teal-green  — EGFP (control)
+C_ENDO = "#9467BD"        # purple      — endophilin (sensor)
+C_TRUTH = "#444444"       # grey        — reference lines (truth / perfect)
+C_REGIME = "#F6D77A"      # warm sand   — curvature-sensing regime shading
+C_FOOT = "#555555"        # caption / footnote grey
 
 
 def read_csv(name):
@@ -64,10 +94,10 @@ def to_float(xs):
 def figure1():
     _, rows = read_csv("real_perspot.csv")
     panels = [
-        ("300nM_EGFP", "EGFP (negative control)", C_EGFP),
-        ("300nM_endophilin", "Endophilin (curvature sensor)", C_ENDO),
+        ("300nM_EGFP", "EGFP — negative control", C_EGFP),
+        ("300nM_endophilin", "Endophilin — curvature sensor", C_ENDO),
     ]
-    fig, axes = plt.subplots(1, 2, figsize=(11.5, 5.0), sharex=True, sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(12.5, 5.6), sharex=True, sharey=True)
     for ax, (sample, title, color) in zip(axes, panels):
         sub = [r for r in rows if r["sample"] == sample]
         lx = to_float([r["log_lipid"] for r in sub])
@@ -76,31 +106,43 @@ def figure1():
         slope, intercept = np.polyfit(lx, ly, 1)
         alpha = 2.0 * slope
 
-        ax.scatter(np.exp(lx), np.exp(ly), s=4, alpha=0.12, color=color,
-                   edgecolors="none", rasterized=True)
+        ax.scatter(np.exp(lx), np.exp(ly), s=5, alpha=0.10, color=color,
+                   edgecolors="none", rasterized=True, zorder=1)
         xs = np.linspace(lx.min(), lx.max(), 100)
+        # colored fit line with a black outline so it reads on top of the cloud
         ax.plot(np.exp(xs), np.exp(intercept + slope * xs),
-                color="black", lw=2.2)
+                color="white", lw=5.0, zorder=4, solid_capstyle="round")
+        ax.plot(np.exp(xs), np.exp(intercept + slope * xs),
+                color=color, lw=3.0, zorder=5, solid_capstyle="round")
         ax.set_xscale("log")
         ax.set_yscale("log")
-        ax.set_title(f"{title}\nslope ≈ {slope:.2f}   (α ≈ {alpha:.2f})")
-        ax.set_xlabel("lipid fluorescence  (liposome size →)")
-        ax.text(0.04, 0.94, f"n = {len(sub):,} liposomes",
-                transform=ax.transAxes, va="top", fontsize=10, color="#333")
-    axes[0].set_ylabel("protein fluorescence  (amount bound →)")
-    fig.suptitle("How much protein binds vs. liposome size, per detected liposome",
-                 fontsize=14, fontweight="bold")
-    fig.text(0.5, 0.005,
-             "α = 2×(slope of log protein vs log lipid).  α≈2 = binding tracks "
-             "membrane area (no preference); α<2 = preference for small, high-curvature "
-             "liposomes.\nEGFP is steeper (near area-proportional); endophilin is much "
-             "shallower — the signature of curvature sensing.  Native photometry, "
-             "pre gain-correction (see Fig. 3).",
-             ha="center", fontsize=9, color="#333")
-    fig.tight_layout(rect=(0, 0.07, 1, 0.96))
+        ax.set_title(title, color=color)
+        ax.set_xlabel("lipid fluorescence  —  liposome size →")
+        # direct, prominent alpha annotation in the empty upper-left corner
+        ax.text(0.05, 0.95, f"α ≈ {alpha:.1f}", transform=ax.transAxes,
+                va="top", ha="left", fontsize=22, fontweight="bold", color=color)
+        ax.text(0.05, 0.80, f"slope ≈ {slope:.2f}", transform=ax.transAxes,
+                va="top", ha="left", fontsize=12, color="#555")
+        ax.text(0.97, 0.05, f"n = {len(sub):,} liposomes", transform=ax.transAxes,
+                va="bottom", ha="right", fontsize=10.5, color="#666")
+        ax.grid(True, which="major", alpha=0.30)
+    axes[0].set_ylabel("protein fluorescence  —  amount bound →")
+    fig.suptitle("Protein binding vs liposome size:  EGFP (control) vs endophilin "
+                 "(curvature sensor)")
+    fig.text(0.5, 0.085,
+             "α = 2 × slope of (log protein vs log lipid).    α ≈ 2 → binding tracks "
+             "membrane area;    α < 2 → preference for small, high-curvature liposomes.",
+             ha="center", fontsize=10.5, color=C_FOOT)
+    fig.text(0.5, 0.030,
+             "EGFP is steep (near area-proportional); endophilin is much shallower — the "
+             "signature of curvature sensing.",
+             ha="center", fontsize=11, color=C_FOOT)
+    fig.text(0.99, 0.006, "native photometry, pre gain-correction (Fig. 3)",
+             ha="right", fontsize=8.5, style="italic", color="#999")
+    fig.tight_layout(rect=(0, 0.12, 1, 0.94))
     fig.savefig(os.path.join(FIGS, "fig1_measurement.png"))
     plt.close(fig)
-    print(f"fig1: EGFP slope/alpha, endophilin slope/alpha written")
+    print("fig1: EGFP slope/alpha, endophilin slope/alpha written")
 
 
 # ==========================================================================
@@ -124,7 +166,7 @@ def figure2():
         return np.array([d[b] for b in order])
 
     x = _bin_centers(order)
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5.4))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5.8))
 
     def style_diam_axis(ax):
         ax.set_xscale("log")
@@ -133,41 +175,48 @@ def figure2():
         ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
         ax.set_xlim(38, 320)
         ax.set_xlabel("liposome diameter (nm)")
+        ax.grid(True, axis="y", alpha=0.35)
+        ax.grid(False, axis="x")
+
+    def mark_regime(ax, ytext, va):
+        ax.axvspan(40, 90, color=C_REGIME, alpha=0.45, zorder=0)
+        ax.text(60, ytext, "curvature-sensing\nregime (40–90 nm)", ha="center",
+                va=va, fontsize=10, fontweight="bold", color="#9A7A12")
 
     # (a) detection fraction (F1)
-    ax1.plot(x, series("ours", "f1"), "-o", color=C_OURS, lw=2.4, ms=7,
-             label="our method")
-    ax1.plot(x, series("classical", "f1"), "-s", color=C_CLASSICAL, lw=2.4,
-             ms=7, label="standard method")
-    ax1.axvspan(40, 90, color="#FFE9B0", alpha=0.5, zorder=0)
-    ax1.text(63, 0.04, "small,\nhigh-curvature", ha="center", fontsize=9,
-             color="#8a6d00")
+    ax1.plot(x, series("ours", "f1"), "-o", color=C_OURS, lw=2.8, ms=8,
+             label="our method", zorder=5)
+    ax1.plot(x, series("classical", "f1"), "--s", color=C_CLASSICAL, lw=2.8,
+             ms=8, label="standard method", zorder=5)
+    mark_regime(ax1, 0.05, "bottom")
     style_diam_axis(ax1)
     ax1.set_ylabel("fraction correctly detected")
-    ax1.set_title("(a) We detect the small liposomes")
+    ax1.set_title("(a) Detection: we find the small liposomes")
     ax1.set_ylim(0, 0.9)
-    ax1.legend(loc="lower right")
 
     # (b) lipid-size accuracy (lower = better)
-    ax2.plot(x, series("ours", "lipid_logerr"), "-o", color=C_OURS, lw=2.4,
-             ms=7, label="our method")
-    ax2.plot(x, series("classical", "lipid_logerr"), "-s", color=C_CLASSICAL,
-             lw=2.4, ms=7, label="standard method")
-    ax2.axvspan(40, 90, color="#FFE9B0", alpha=0.5, zorder=0)
+    ax2.plot(x, series("ours", "lipid_logerr"), "-o", color=C_OURS, lw=2.8,
+             ms=8, label="our method", zorder=5)
+    ax2.plot(x, series("classical", "lipid_logerr"), "--s", color=C_CLASSICAL,
+             lw=2.8, ms=8, label="standard method", zorder=5)
+    mark_regime(ax2, 1.02, "top")
     style_diam_axis(ax2)
-    ax2.set_ylabel("size error  (lower is better)")
-    ax2.set_title("(b) ...and size them accurately")
-    ax2.legend(loc="upper right")
+    ax2.set_ylabel("size error   (lower is better)")
+    ax2.set_title("(b) Sizing: ...and measure their size accurately")
 
-    fig.suptitle("Small liposomes: where curvature sensing happens, and where the "
-                 "standard method fails",
-                 fontsize=13.5, fontweight="bold")
+    fig.suptitle("Our detector recovers the small, high-curvature liposomes the "
+                 "standard method misses")
+    # single shared legend under the title
+    handles, labels = ax1.get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 0.915),
+               ncol=2, frameon=False, fontsize=12.5)
     fig.text(0.5, 0.02,
-             "At 40–90 nm the standard automated method detects a small minority "
-             "and mis-sizes them badly; our detector finds most of them and sizes them "
-             "accurately,\nso the curvature-sensing regime is measured representatively.",
-             ha="center", fontsize=9, color="#333")
-    fig.tight_layout(rect=(0, 0.07, 1, 0.95))
+             "In the 40–90 nm range the standard automated method detects only a small "
+             "minority and mis-sizes them badly; our detector finds most of them and "
+             "sizes them accurately,\nso the curvature-sensing regime is measured "
+             "representatively rather than inferred from larger liposomes.",
+             ha="center", fontsize=10.5, color=C_FOOT)
+    fig.tight_layout(rect=(0, 0.075, 1, 0.90))
     fig.savefig(os.path.join(FIGS, "fig2_small_liposomes.png"))
     plt.close(fig)
     print("fig2: detection + sizing vs diameter written")
@@ -186,26 +235,37 @@ def figure3():
     lo = to_float([egfp[i]["cor_lo"] for i in o])
     hi = to_float([egfp[i]["cor_hi"] for i in o])
 
-    fig, (axa, axb) = plt.subplots(1, 2, figsize=(12, 5.0),
-                                   gridspec_kw={"width_ratios": [1.25, 1]})
+    fig, (axa, axb) = plt.subplots(1, 2, figsize=(13, 5.6),
+                                   gridspec_kw={"width_ratios": [1.3, 1]})
 
     # (a) EGFP recovered alpha vs concentration
     xpos = np.arange(len(conc))
+    # reference line at the expected truth
+    axa.axhline(2.0, ls="--", color=C_TRUTH, lw=2, zorder=2)
+    axa.text(xpos[0] - 0.15, 2.0, "expected (α = 2)", va="bottom", ha="left",
+             color=C_TRUTH, fontsize=12, fontweight="bold")
     axa.errorbar(xpos, alpha, yerr=[alpha - lo, hi - alpha], fmt="-o",
-                 color=C_EGFP, lw=2.4, ms=8, capsize=4)
-    axa.axhline(2.0, ls="--", color=C_TRUTH, lw=2)
-    axa.text(xpos[-1], 2.0, "  α = 2  (known truth for EGFP)",
-             va="bottom", ha="right", color=C_TRUTH, fontsize=10)
+                 color=C_EGFP, lw=2.8, ms=10, capsize=5, capthick=1.8,
+                 zorder=5, label="EGFP (measured)")
+    # shade the gap between measured and expected to make it obvious
+    axa.fill_between(xpos, alpha, 2.0, color=C_EGFP, alpha=0.10, zorder=1)
+    axa.annotate("", xy=(xpos[-1] + 0.05, 2.0), xytext=(xpos[-1] + 0.05, alpha[-1]),
+                 arrowprops=dict(arrowstyle="<->", color="#999", lw=1.4))
+    axa.text(xpos[-1] + 0.12, (alpha[-1] + 2.0) / 2, "gap from\nexpected",
+             va="center", ha="left", fontsize=9.5, color="#777")
     axa.set_xticks(xpos)
     axa.set_xticklabels([f"{c} nM" for c in conc])
+    axa.set_xlim(-0.4, len(conc) - 0.2)
     axa.set_xlabel("EGFP concentration")
     axa.set_ylabel("recovered α")
-    axa.set_title("(a) The control isn't flat at α = 2 yet")
-    axa.set_ylim(1.0, 2.15)
+    axa.set_title("(a) The control rises with concentration\ninstead of sitting flat at α = 2")
+    axa.set_ylim(1.0, 2.18)
+    axa.grid(True, axis="y", alpha=0.35)
+    axa.grid(False, axis="x")
 
     # (b) the explanation: lipid-channel PMT voltage table
     axb.axis("off")
-    axb.set_title("(b) Why: the lipid detector voltage changed")
+    axb.set_title("(b) Why: the lipid detector voltage\nwas lowered per sample")
     table_rows = [
         ("20 nM", "750 V"),
         ("50 nM", "640 V"),
@@ -216,36 +276,40 @@ def figure3():
         cellText=table_rows,
         colLabels=["EGFP sample", "561 nm lipid\nPMT voltage"],
         cellLoc="center", colLoc="center",
-        bbox=[0.08, 0.40, 0.84, 0.50],
+        bbox=[0.10, 0.46, 0.80, 0.44],
     )
     tbl.auto_set_font_size(False)
-    tbl.set_fontsize(11)
-    tbl.scale(1, 1.2)
+    tbl.set_fontsize(12.5)
+    tbl.scale(1, 1.5)
     for (r, c), cell in tbl.get_celld().items():
-        cell.set_edgecolor("#cccccc")
+        cell.set_edgecolor("#D0D0D0")
+        cell.set_linewidth(0.8)
         if r == 0:
-            cell.set_facecolor("#eef3f7")
-            cell.set_text_props(weight="bold")
-    axb.text(0.5, 0.26,
-             "The 488 nm protein detector was held constant (295 V),\n"
-             "but the operator lowered the 561 nm lipid detector at\n"
-             "higher concentrations to avoid saturation. PMT gain is\n"
-             "nonlinear in voltage, so the size axis is scaled\n"
-             "differently per sample — an acquisition setting,\n"
-             "not biology. Fix in progress: gain-normalize the lipid\n"
-             "channel across samples before pooling.",
-             ha="center", va="top", transform=axb.transAxes, fontsize=9.5,
-             color="#333")
+            cell.set_facecolor("#E8EEF3")
+            cell.set_text_props(weight="bold", color="#1A3A52")
+            cell.set_height(cell.get_height() * 1.25)
+        else:
+            cell.set_facecolor("#FBFCFD" if r % 2 else "#F2F5F8")
+    axb.text(0.5, 0.34,
+             "The 488 nm protein detector was held constant (295 V), but the\n"
+             "operator lowered the 561 nm lipid detector at higher concentrations\n"
+             "to avoid saturation. Detector gain is nonlinear in voltage, so the\n"
+             "size axis is scaled differently in each sample — an acquisition\n"
+             "setting, not biology.\n\n"
+             "Fix in progress: gain-normalize the lipid channel across samples\n"
+             "before pooling.",
+             ha="center", va="top", transform=axb.transAxes, fontsize=10.5,
+             color="#333", linespacing=1.4)
 
-    fig.suptitle("The EGFP control caught a subtle acquisition artifact",
-                 fontsize=13.5, fontweight="bold")
-    fig.text(0.5, 0.02,
+    fig.suptitle("EGFP control should read α = 2 at all concentrations — the trend "
+                 "reveals an acquisition artifact")
+    fig.text(0.5, 0.015,
              "EGFP has no curvature preference, so it must read α = 2 at every "
-             "concentration. It doesn't yet — α rises with concentration, and the trend "
-             "tracks the\nlipid-detector voltage. This is a correctable calibration issue, "
-             "not a flaw in the method or the biology.",
-             ha="center", fontsize=9, color="#333")
-    fig.tight_layout(rect=(0, 0.07, 1, 0.95))
+             "concentration. It doesn't yet, and the rising trend tracks the lipid-detector "
+             "voltage:\nthis is a correctable calibration issue, not a flaw in the method "
+             "or the biology — the control did its job and surfaced it.",
+             ha="center", fontsize=10.5, color=C_FOOT)
+    fig.tight_layout(rect=(0, 0.085, 1, 0.93))
     fig.savefig(os.path.join(FIGS, "fig3_egfp_artifact.png"))
     plt.close(fig)
     print("fig3: EGFP trend + voltage table written")
@@ -263,24 +327,28 @@ def figure4():
     o = np.argsort(true)
     true, rec, lo, hi = true[o], rec[o], lo[o], hi[o]
 
-    fig, ax = plt.subplots(figsize=(6.0, 5.6))
+    fig, ax = plt.subplots(figsize=(6.6, 6.2))
     lim = [0.4, 2.3]
-    ax.plot(lim, lim, ls="--", color=C_TRUTH, lw=1.8, label="perfect recovery")
+    ax.plot(lim, lim, ls="--", color=C_TRUTH, lw=2.0, zorder=2,
+            label="perfect recovery (y = x)")
     ax.errorbar(true, rec, yerr=[rec - lo, hi - rec], fmt="o", color=C_OURS,
-                ms=7, lw=1.8, capsize=3, label="our method")
+                ms=9, lw=2.0, capsize=4, capthick=1.6, zorder=5,
+                label="our method (recovered)")
     ax.set_xlim(lim)
     ax.set_ylim(lim)
     ax.set_aspect("equal")
-    ax.set_xlabel("true α  (set in simulation)")
-    ax.set_ylabel("recovered α  (measured)")
-    ax.set_title("Validation on known-answer simulated data")
+    ax.set_xticks([0.5, 1.0, 1.5, 2.0])
+    ax.set_yticks([0.5, 1.0, 1.5, 2.0])
+    ax.set_xlabel("true α   (set in simulation)")
+    ax.set_ylabel("recovered α   (measured)")
+    ax.set_title("Validated on simulated data with known α")
     ax.legend(loc="upper left")
-    fig.text(0.5, 0.015,
-             "On simulated liposomes where the true α is known, the method\n"
-             "recovers it across the full range — this is why we trust the\n"
-             "measurements on real data.",
-             ha="center", fontsize=9, color="#333")
-    fig.tight_layout(rect=(0, 0.11, 1, 1))
+    ax.grid(True, alpha=0.30)
+    fig.text(0.5, 0.02,
+             "On simulated liposomes where the true α is known, the method recovers it\n"
+             "across the full range — this is why we trust the measurements on real data.",
+             ha="center", fontsize=10.5, color=C_FOOT)
+    fig.tight_layout(rect=(0, 0.085, 1, 1))
     fig.savefig(os.path.join(FIGS, "fig4_synthetic_validation.png"))
     plt.close(fig)
     print("fig4: synthetic recovery curve written")
