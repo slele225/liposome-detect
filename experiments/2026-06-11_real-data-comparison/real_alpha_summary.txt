@@ -1,0 +1,18 @@
+
+======================================================================
+EGFP ANCHOR (true alpha = 2.0) — the go/no-go
+======================================================================
+  n EGFP samples            : 4
+  STANDARD  mean alpha       : 1.253   mean |alpha-2.0| = 0.747
+  CORRECTED mean alpha       : 1.526   mean |alpha-2.0| = 0.474
+  -> nearer 2.0 on real ground truth: CORRECTED
+  READING: STANDARD is biased LOW (<1.9) and CORRECTED is nearer 2.0 -> the bias is REAL on real data.
+  EGFP internal consistency : CORRECTED spread (max-min) = 0.394 across the 4 samples
+    RED FLAG: EGFP corrected alphas DIVERGE (>0.3) despite a shared prep -> suspect concentration-dependent leakage / a per-concentration artifact, NOT the OLS-vs-EIV bias.
+
+----------------------------------------------------------------------
+ENDOPHILIN (curvature sensor, expect alpha < 2)
+----------------------------------------------------------------------
+  25nM_endophilin   STANDARD=0.649  CORRECTED=0.447  (delta=-0.202)
+  300nM_endophilin  STANDARD=0.626  CORRECTED=0.409  (delta=-0.217)
+  Sensing strength = distance below 2.0; compare whether STANDARD vs CORRECTED shifts that distance materially.

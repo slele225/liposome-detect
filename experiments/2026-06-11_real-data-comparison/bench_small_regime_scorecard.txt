@@ -1,0 +1,15 @@
+
+======================================================================
+SMALL-REGIME SCORECARD (the candidate moat: bins 40-55, 55-70, 70-90)
+======================================================================
+-- sizing=emphasis --
+  ours       small-bin F1=0.629  |lipid logerr|=0.198  repr_ratio=1.025 (1.0=representative)
+  classical  small-bin F1=0.231  |lipid logerr|=0.696  repr_ratio=1.015 (1.0=representative)
+-- sizing=dls --
+  ours       small-bin F1=0.613  |lipid logerr|=0.221  repr_ratio=1.005 (1.0=representative)
+  classical  small-bin F1=0.307  |lipid logerr|=0.558  repr_ratio=0.985 (1.0=representative)
+Success for ours = beat baselines on small-bin F1 AND small-bin intensity
+accuracy AND keep repr_ratio ~1 AND keep alpha unbiased (all four). A higher
+small-bin recall that is biased-bright (repr_ratio>>1) is WORSE for alpha.
+If ours is at parity: the contribution is the validated corrected measurement
+(EGFP=2.0 + DLS + sweep), NOT 'best detector'.

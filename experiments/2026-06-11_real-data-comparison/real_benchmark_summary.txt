@@ -1,0 +1,17 @@
+
+======================================================================
+EGFP ANCHOR (true alpha = 2.0) per method — shared photometry + fit
+======================================================================
+  ours           mean alpha=2.245  mean |alpha-2.0|=0.534  (n=4 EGFP samples)
+  classical      mean alpha=5.511  mean |alpha-2.0|=3.511  (n=4 EGFP samples)
+  ours_native    mean alpha=1.458  mean |alpha-2.0|=0.542  (n=4 EGFP samples)
+  -> closest to EGFP=2.0 (shared photometry): ours
+  NOTE: this isolates DETECTION (shared photometry). The native
+  table (ours_native / external own photometry) is the end-to-end
+  comparison; differences localize the gap to detection vs photometry.
+
+----------------------------------------------------------------------
+ENDOPHILIN (curvature sensor, alpha < 2)
+----------------------------------------------------------------------
+  25nM_endophilin   ours=2.527  classical=7.865  ours_native=0.428
+  300nM_endophilin  ours=3.080  classical=4.976  ours_native=0.388
