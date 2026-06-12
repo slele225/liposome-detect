@@ -225,8 +225,129 @@ def pipeline():
     save_asset(fig, "pipeline")
 
 
+# =====================================================================
+# NEW SLIDE A: how the SLiC measurement works (real-data pipeline)
+# =====================================================================
+def slic_measurement():
+    fig = plt.figure(figsize=(16, 5.0))
+    ax = blank_ax(fig)
+    ax.set_xlim(0, 16)
+    ax.set_ylim(0, 5)
+
+    yc = 3.0
+    bh = 1.6
+
+    # --- step 1: two-channel confocal image icon -----------------------
+    ix, iy, isz = 0.5, yc - 0.9, 1.8
+    ax.add_patch(Rectangle((ix, iy), isz, isz, fc="#0d0018", ec=C.black, lw=2))
+    rng = np.random.default_rng(7)
+    for _ in range(46):
+        px = ix + rng.uniform(0.14, isz - 0.14)
+        py = iy + rng.uniform(0.14, isz - 0.14)
+        col = C.blue if rng.random() < 0.5 else C.green
+        ax.add_patch(Circle((px, py), 0.05, fc=col, ec="none", alpha=0.95))
+    ax.text(ix + isz / 2, iy + isz + 0.26, "Two-channel\nconfocal image",
+            ha="center", va="bottom", fontsize=17, fontweight="bold",
+            color=C.black)
+    ax.add_patch(Circle((ix + 0.18, iy - 0.34), 0.085, fc=C.blue, ec="none"))
+    ax.text(ix + 0.36, iy - 0.34, "lipid  →  size", va="center", fontsize=13,
+            color=C.black)
+    ax.add_patch(Circle((ix + 0.18, iy - 0.72), 0.085, fc=C.green, ec="none"))
+    ax.text(ix + 0.36, iy - 0.72, "protein  →  binding", va="center",
+            fontsize=13, color=C.black)
+
+    # --- step 2: detect each liposome ----------------------------------
+    arrow(ax, 2.45, yc, 3.15, yc)
+    box(ax, 3.2, yc - bh / 2, 2.3, bh, "Detect each\nliposome",
+        fc=C.blue, fs=18)
+
+    # --- step 3: per-vesicle measurement -------------------------------
+    arrow(ax, 5.55, yc, 6.2, yc)
+    box(ax, 6.25, yc - bh / 2 - 0.15, 4.0, bh + 0.3,
+        "Per vesicle:\nlipid intensity ≈ size\nprotein intensity ≈ amount bound",
+        fc=C.skyblue, fs=15)
+
+    # --- step 4: log-log sorting curve -> slope = alpha ----------------
+    arrow(ax, 10.3, yc, 11.0, yc)
+    px0, py0, pw, ph = 11.5, 1.55, 3.9, 2.9
+    ax.plot([px0, px0], [py0, py0 + ph], color=C.black, lw=2.2)
+    ax.plot([px0, px0 + pw], [py0, py0], color=C.black, lw=2.2)
+    pr = np.random.default_rng(2)
+    t = pr.uniform(0, 1, 130)
+    sx = px0 + 0.35 + t * (pw - 0.6)
+    sy = py0 + ph - 0.45 - t * (ph - 0.9) + pr.normal(0, 0.16, t.size)
+    ax.scatter(sx, sy, s=10, color=C.blue, alpha=0.28, edgecolor="none",
+               zorder=2)
+    ax.plot([px0 + 0.35, px0 + pw - 0.35], [py0 + ph - 0.45, py0 + 0.55],
+            color=C.vermillion, lw=4, zorder=3)
+    # annotation in the empty top-right corner (line runs top-left→bottom-right)
+    ax.text(px0 + pw - 0.2, py0 + ph - 0.3, "slope = α", ha="right", va="top",
+            fontsize=20, color=C.vermillion, fontweight="bold")
+    ax.text(px0 + pw / 2, py0 - 0.32, "liposome size  (log)", ha="center",
+            va="top", fontsize=13, color=C.grey)
+    ax.text(px0 - 0.28, py0 + ph / 2, "protein density  (log)", ha="center",
+            va="center", rotation=90, fontsize=13, color=C.grey)
+    ax.text(px0 + pw / 2, py0 + ph + 0.22, "Sorting curve", ha="center",
+            va="bottom", fontsize=16, fontweight="bold", color=C.black)
+    save_asset(fig, "slic_measurement")
+
+
+# =====================================================================
+# NEW SLIDE B: the forward model (physics chain that GENERATES an image)
+# =====================================================================
+def forward_model():
+    fig = plt.figure(figsize=(16.5, 5.2))
+    ax = blank_ax(fig)
+    ax.set_xlim(0, 16.5)
+    ax.set_ylim(0, 5.2)
+
+    yc = 3.05
+    h = 2.35
+    y0 = yc - h / 2
+
+    steps = [
+        ("Sample sizes\n+ place at\ncalibrated density", C.skyblue, 2.7, 16),
+        ("Assign intensities\nlipid $\\propto d^{2}$\nprotein $\\propto d^{\\alpha}$",
+         C.blue, 2.7, 16),
+        ("Optical blur\n(PSF)", C.orange, 2.4, 17),
+        ("Detector physics:\nPoisson shot noise →\ngain × excess-noise →\n"
+         "read noise + bias →\nclip to 12-bit", "#555555", 3.1, 13.5),
+    ]
+    x = 0.45
+    gap = 0.42
+    centers = []
+    for label, color, w, fs in steps:
+        box(ax, x, y0, w, h, label, fc=color, fs=fs)
+        centers.append((x, x + w))
+        x += w + gap
+
+    # payoff box (emphasized): realistic image WITH known ground truth
+    pw = 3.0
+    arrow(ax, centers[-1][1], yc, x, yc)
+    ax.add_patch(FancyBboxPatch((x - 0.12, y0 - 0.12), pw + 0.24, h + 0.24,
+                 boxstyle="round,pad=0.02,rounding_size=0.1",
+                 fc="#d7f0e6", ec=C.green, lw=2.5, zorder=0))
+    box(ax, x, y0, pw, h,
+        "Realistic image\n+ known\nground truth", fc=C.green, fs=18)
+    ax.text(x + pw / 2, y0 - 0.34, "← why we can validate", ha="center",
+            va="top", fontsize=14, color="#0b5c43", fontweight="bold")
+
+    # arrows between process steps
+    for i in range(len(centers) - 1):
+        arrow(ax, centers[i][1], yc, centers[i + 1][0], yc)
+
+    # trustworthy-parameters footnote
+    ax.text(centers[0][0], 0.42,
+            "Calibrated, trustworthy parameters:  "
+            "PSF widths · lipid brightness · spot density",
+            ha="left", va="center", fontsize=14, color=C.black, style="italic")
+    save_asset(fig, "forward_model")
+
+
 curvature_cartoon()
 architectures()
 dls_conditioning()
 pipeline()
+slic_measurement()
+forward_model()
 print("done: schematics")

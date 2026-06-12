@@ -81,10 +81,10 @@ def title(slide, text, size=30):
              bold=True, font=TITLE_FONT)
 
 
-def oneliner(slide, text, color=MUTED, bold=False, size=15):
-    """A single short line pinned near the bottom, centered."""
-    add_text(slide, text, 0.7, 6.78, 11.93, 0.5, size, color,
-             bold=bold, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+def subtitle(slide, text, color=INK, size=16, top=1.12, bold=False):
+    """A clean centered line just under the title (NOT grey-bottom)."""
+    add_text(slide, text, 0.55, top, 12.2, 0.5, size, color, bold=bold,
+             align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
 
 
 def slide_number(slide, n):
@@ -121,117 +121,116 @@ add_picture(s, os.path.join(FIG, "hero_two_channel.png"),
             7.35, 1.0, 5.45, 5.5)
 
 # ====================================================================
-# 2. CURVATURE SENSING AS alpha
+# 2. CURVATURE SENSING AS alpha  (convention kept as a clean subtitle)
 # ====================================================================
 s = new(2)
 title(s, "Curvature sensing as a single number, α")
+subtitle(s, "Protein density ∝ d^(α−2)   •   α = 2: no sensing   •   "
+            "α < 2: senses curvature", color=BLUE, size=16, top=1.08)
+ftop = 1.6
 half = (RIGHT_W - 0.4) / 2.0
 add_picture(s, os.path.join(ASSET, "curvature_sensing.png"),
-            LEFT, TOP, half, BOT_CAP - TOP)
+            LEFT, ftop, half, BOT_FULL - ftop)
 add_picture(s, os.path.join(FIG, "sorting_curve_endophilin.png"),
-            LEFT + half + 0.4, TOP, half, BOT_CAP - TOP)
-oneliner(s, "Protein density ∝ d^(α−2)   •   "
-            "α = 2: no sensing   •   α < 2: senses curvature",
-         size=16)
+            LEFT + half + 0.4, ftop, half, BOT_FULL - ftop)
 
 # ====================================================================
-# 3. TRAIN ON A CALIBRATED SIMULATOR
+# 3. NEW — HOW THE SLiC MEASUREMENT WORKS  (real-data assay)
 # ====================================================================
 s = new(3)
-title(s, "Train on a calibrated simulator, not real data")
-add_picture(s, os.path.join(FIG, "real_vs_sim_tiles.png"),
-            LEFT, TOP, RIGHT_W, BOT_CAP - TOP)
-oneliner(s, "Real data has no ground truth; the calibrated simulator gives "
-            "perfectly labeled training images.")
+title(s, "How the SLiC measurement works")
+add_picture(s, os.path.join(ASSET, "slic_measurement.png"),
+            LEFT, TOP + 0.3, RIGHT_W, BOT_FULL - TOP - 0.6)
 
 # ====================================================================
-# 4. CALIBRATION: MATCH IMAGE STATISTICS  (title only)
+# 4. TRAIN ON A CALIBRATED SIMULATOR
 # ====================================================================
 s = new(4)
+title(s, "Train on a calibrated simulator, not real data")
+add_picture(s, os.path.join(FIG, "real_vs_sim_tiles.png"),
+            LEFT, TOP, RIGHT_W, BOT_FULL - TOP)
+
+# ====================================================================
+# 5. NEW — THE FORWARD MODEL  (physics chain that generates an image)
+# ====================================================================
+s = new(5)
+title(s, "The forward model")
+add_picture(s, os.path.join(ASSET, "forward_model.png"),
+            LEFT, TOP + 0.3, RIGHT_W, BOT_FULL - TOP - 0.6)
+
+# ====================================================================
+# 6. CALIBRATION: MATCH IMAGE STATISTICS  (title only)
+# ====================================================================
+s = new(6)
 title(s, "Calibration: match image statistics, detection-free")
 add_picture(s, os.path.join(FIG, "calibration_stats.png"),
             LEFT, TOP + 0.4, RIGHT_W, BOT_FULL - TOP - 0.8)
 
 # ====================================================================
-# 5. BOOTSTRAP RE-FITS
+# 7. BOOTSTRAP RE-FITS
 # ====================================================================
-s = new(5)
+s = new(7)
 title(s, "Validated across 100 bootstrap re-fits")
 add_picture(s, os.path.join(FIG, "bootstrap_distributions.png"),
-            LEFT, TOP, RIGHT_W, BOT_CAP - TOP)
-oneliner(s, "Gain and excess-noise are degenerate — only their product "
-            "is constrained, not each alone.")
+            LEFT, TOP, RIGHT_W, BOT_FULL - TOP)
 
 # ====================================================================
-# 6. U-NET vs CMEAnalysis  (promote r2 headline)
+# 8. U-NET vs CMEAnalysis  (r2 headline kept — prominent, near the top)
 # ====================================================================
-s = new(6)
+s = new(8)
 title(s, "U-Net vs CMEAnalysis on real endophilin")
-add_text(s, "r²  0.08 → 0.58  (7× better fit)   •   "
-            "~3× more usable spots",
-         0.55, 1.18, 12.2, 0.55, 19, BLUE, bold=True,
-         align=PP_ALIGN.CENTER)
+subtitle(s, "r²  0.08 → 0.58  (7× better fit)   •   ~3× more usable spots",
+         color=BLUE, size=19, top=1.18, bold=True)
 add_picture(s, os.path.join(FIG, "sorting_curve_compare.png"),
             LEFT, 1.9, RIGHT_W, BOT_FULL - 1.9)
 
 # ====================================================================
-# 7. EGFP NEGATIVE CONTROL
+# 9. EGFP NEGATIVE CONTROL
 # ====================================================================
-s = new(7)
+s = new(9)
 title(s, "EGFP negative control reads as false sensing")
 add_picture(s, os.path.join(FIG, "egfp_bias.png"),
-            LEFT, TOP, RIGHT_W, BOT_CAP - TOP)
-oneliner(s, "EGFP does not bind membranes — its slope should be 0. "
-            "The detector reports sensing anyway.")
+            LEFT, TOP, RIGHT_W, BOT_FULL - TOP)
 
 # ====================================================================
-# 8. CANDIDATE CAUSES (not a verdict)
+# 10. CANDIDATE CAUSES (not a verdict)
 # ====================================================================
-s = new(8)
+s = new(10)
 title(s, "Candidate causes we're testing")
 half = (RIGHT_W - 0.4) / 2.0
 add_picture(s, os.path.join(FIG, "training_prior.png"),
-            LEFT, TOP, half, BOT_CAP - TOP)
+            LEFT, TOP, half, BOT_FULL - TOP)
 add_picture(s, os.path.join(FIG, "diameter_stratified.png"),
-            LEFT + half + 0.4, TOP, half, BOT_CAP - TOP)
-oneliner(s, "Possibilities under investigation: training distribution  •  "
-            "resolution loss on small / dim spots  •  acquisition "
-            "(lipid PMT lowered per sample, 750→580 V)", size=14)
+            LEFT + half + 0.4, TOP, half, BOT_FULL - TOP)
 
 # ====================================================================
-# 9. PLAN 1: balanced data + full-resolution models
+# 11. PLAN 1: balanced data + full-resolution models
 # ====================================================================
-s = new(9)
+s = new(11)
 title(s, "Plan 1: balanced data + full-resolution models")
 add_picture(s, os.path.join(ASSET, "architectures.png"),
-            LEFT, TOP, RIGHT_W, BOT_CAP - TOP)
-oneliner(s, "Randomize curvature per spot (no learnable prior); test models "
-            "that keep full resolution instead of shrinking the image.")
+            LEFT, TOP, RIGHT_W, BOT_FULL - TOP)
 
 # ====================================================================
-# 10. PLAN 2: condition on the DLS size prior
+# 12. PLAN 2: condition on the DLS size prior
 # ====================================================================
-s = new(10)
+s = new(12)
 title(s, "Plan 2: condition the detector on the DLS size prior")
-# wide schematic on top, narrow null-result plot tucked beside it
+# wide schematic + the narrow null-result plot beside it
 left_w = RIGHT_W * 0.62
 right_w = RIGHT_W - left_w - 0.4
 add_picture(s, os.path.join(ASSET, "dls_conditioning.png"),
-            LEFT, TOP, left_w, BOT_CAP - TOP)
+            LEFT, TOP, left_w, BOT_FULL - TOP)
 add_picture(s, os.path.join(FIG, "film_null.png"),
-            LEFT + left_w + 0.4, TOP, right_w, BOT_CAP - TOP)
-oneliner(s, "FiLM on the plain size distribution was a null result; next is "
-            "the d⁶-weighted input.")
+            LEFT + left_w + 0.4, TOP, right_w, BOT_FULL - TOP)
 
 # ====================================================================
-# 11. PIPELINE + BENCHMARK + GOAL
+# 13. PIPELINE + BENCHMARK + GOAL
 # ====================================================================
-s = new(11)
+s = new(13)
 title(s, "Pipeline, benchmark, and goal")
 add_picture(s, os.path.join(ASSET, "pipeline.png"),
-            LEFT, TOP, RIGHT_W, BOT_CAP - TOP)
-oneliner(s, "Out-of-the-box Spotiflow under-detects our small liposomes "
-            "— an instrument mismatch.")
+            LEFT, TOP, RIGHT_W, BOT_FULL - TOP)
 
 out = os.path.join(HERE, "deck.pptx")
 prs.save(out)
